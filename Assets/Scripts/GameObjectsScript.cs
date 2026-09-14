@@ -4,14 +4,14 @@ public class GameObjectsScript : MonoBehaviour
 {
     public GameObject garbageTruck;
     public GameObject medicine;
-    public GameObject schoolBuss;
+    public GameObject schoolBus;
 
     [HideInInspector] 
     public Vector2 garbageTruckCoord;
     [HideInInspector]
     public Vector2 medicineCoord;
     [HideInInspector]
-    public Vector2 schoolBussCoord;
+    public Vector2 schoolBusCoord;
 
     public Canvas canvas;
     public AudioSource carSoundSource;
@@ -28,6 +28,6 @@ public class GameObjectsScript : MonoBehaviour
     {
         garbageTruckCoord = garbageTruck.GetComponent<RectTransform>().localPosition;
         medicineCoord = medicine.GetComponent<RectTransform>().localPosition;
-        schoolBussCoord = schoolBuss.GetComponent<RectTransform>().localPosition;
+        schoolBusCoord = schoolBus.GetComponent<RectTransform>().localPosition;
     }
 }
