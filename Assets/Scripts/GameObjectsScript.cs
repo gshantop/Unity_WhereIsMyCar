@@ -5,6 +5,16 @@ public class GameObjectsScript : MonoBehaviour
     public GameObject garbageTruck;
     public GameObject medicine;
     public GameObject schoolBus;
+    public GameObject traktors;
+    public GameObject traktors2;
+    public GameObject policija;
+    public GameObject b2;
+    public GameObject e46;
+    public GameObject e61;
+    public GameObject ugunsdzeseji;
+    public GameObject eskavators;
+    public GameObject cementamasina;
+
 
     [HideInInspector] 
     public Vector2 garbageTruckCoord;
@@ -12,6 +22,24 @@ public class GameObjectsScript : MonoBehaviour
     public Vector2 medicineCoord;
     [HideInInspector]
     public Vector2 schoolBusCoord;
+    [HideInInspector]
+    public Vector2 traktorsCoord;
+    [HideInInspector]
+    public Vector2 traktors2Coord;
+    [HideInInspector]
+    public Vector2 policijaCoord;
+    [HideInInspector]
+    public Vector2 b2Coord;
+    [HideInInspector]
+    public Vector2 e46Coord;
+    [HideInInspector]
+    public Vector2 e61Coord;
+    [HideInInspector]
+    public Vector2 ugunsdzesejiCoord;
+    [HideInInspector]
+    public Vector2 eskavatorsCoord;
+    [HideInInspector]
+    public Vector2 cementamasinaCoord;
 
     public Canvas canvas;
     public AudioSource carSoundSource;
@@ -23,11 +51,20 @@ public class GameObjectsScript : MonoBehaviour
     public static bool isDragging = false;
 
 
-    
+
     void Awake()
     {
         garbageTruckCoord = garbageTruck.GetComponent<RectTransform>().localPosition;
         medicineCoord = medicine.GetComponent<RectTransform>().localPosition;
         schoolBusCoord = schoolBus.GetComponent<RectTransform>().localPosition;
+        traktorsCoord = traktors.GetComponent<RectTransform>().localPosition;
+        traktors2Coord = traktors2.GetComponent<RectTransform>().localPosition;
+        policijaCoord = policija.GetComponent<RectTransform>().localPosition;
+        b2Coord = b2.GetComponent<RectTransform>().localPosition;
+        e46Coord = e46.GetComponent<RectTransform>().localPosition;
+        e61Coord = e61.GetComponent<RectTransform>().localPosition;
+        ugunsdzesejiCoord = ugunsdzeseji.GetComponent<RectTransform>().localPosition;
+        eskavatorsCoord = eskavators.GetComponent<RectTransform>().localPosition;
+        cementamasinaCoord = cementamasina.GetComponent<RectTransform>().localPosition;
     }
 }

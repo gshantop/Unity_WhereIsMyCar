@@ -27,7 +27,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.UpArrow))
             {
-                if(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y < 0.9f)
+                if(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y < 1.5f)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                         new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x,
@@ -57,7 +57,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.RightArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x < 0.9f)
+                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x < 1.5f)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                         new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x + 0.001f,
