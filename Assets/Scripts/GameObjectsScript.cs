@@ -1,7 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections.Generic;
 
 public class GameObjectsScript : MonoBehaviour
 {
+    public RectTransform[] spawnPoints;
+    public RectTransform[] dropPlaces;
+
     public GameObject garbageTruck;
     public GameObject medicine;
     public GameObject schoolBus;
@@ -15,8 +19,7 @@ public class GameObjectsScript : MonoBehaviour
     public GameObject eskavators;
     public GameObject cementamasina;
 
-
-    [HideInInspector] 
+    [HideInInspector]
     public Vector2 garbageTruckCoord;
     [HideInInspector]
     public Vector2 medicineCoord;
@@ -47,13 +50,15 @@ public class GameObjectsScript : MonoBehaviour
 
     [HideInInspector]
     public bool inRightPlace = false;
+
     public static GameObject lastDragged = null;
     public static bool isDragging = false;
 
 
-
     void Awake()
     {
+        SpawnDropPlacesRandomly();
+
         garbageTruckCoord = garbageTruck.GetComponent<RectTransform>().localPosition;
         medicineCoord = medicine.GetComponent<RectTransform>().localPosition;
         schoolBusCoord = schoolBus.GetComponent<RectTransform>().localPosition;
@@ -67,4 +72,39 @@ public class GameObjectsScript : MonoBehaviour
         eskavatorsCoord = eskavators.GetComponent<RectTransform>().localPosition;
         cementamasinaCoord = cementamasina.GetComponent<RectTransform>().localPosition;
     }
-}
+
+
+    private void SpawnDropPlacesRandomly()
+    {
+        if (spawnPoints == null || dropPlaces == null)
+        {
+            Debug.LogError("SpawnPoints vai DropPlaces nav pievienoti!");
+            return;
+        }
+
+        if (spawnPoints.Length < dropPlaces.Length)
+        {
+            Debug.LogError("SpawnPoint nepietiek visām DropPlace vietām!");
+            return;
+        }
+
+        List<RectTransform> availablePoints =
+            new List<RectTransform>(spawnPoints);
+
+        foreach (RectTransform dropPlace in dropPlaces)
+        {
+            if (dropPlace == null)
+            {
+                Debug.LogWarning("Viens DropPlace nav pievienots!");
+                continue;
+            }
+
+            int randomIndex = Random.Range(0, availablePoints.Count);
+
+            RectTransform randomPoint = availablePoints[randomIndex];
+
+            dropPlace.position = randomPoint.position;
+
+            availablePoints.RemoveAt(randomIndex);
+        }
+    }
