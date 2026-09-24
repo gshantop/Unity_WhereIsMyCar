@@ -51,6 +51,9 @@ public class GameObjectsScript : MonoBehaviour
     [HideInInspector]
     public bool inRightPlace = false;
 
+    [HideInInspector]
+    public GameManagerScript gameManagerScript;
+
     public static GameObject lastDragged = null;
     public static bool isDragging = false;
 
@@ -130,6 +133,18 @@ public class GameObjectsScript : MonoBehaviour
 
             index++;
         }
+    }
+
+    public void NotifyCarPlacedCorrectly()
+    {
+        if (gameManagerScript != null)
+            gameManagerScript.RegisterCarPlaced();
+    }
+
+    public void NotifyCarDestroyed()
+    {
+        if (gameManagerScript != null)
+            gameManagerScript.RegisterCarDestroyed();
     }
 
     private void ShuffleList<T>(List<T> list)

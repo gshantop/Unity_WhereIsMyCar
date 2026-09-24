@@ -16,12 +16,12 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        if((eventData.pointerDrag != null) && Input.GetMouseButtonUp(0) &&
+        if ((eventData.pointerDrag != null) && Input.GetMouseButtonUp(0) &&
             (!Input.GetMouseButton(2)))
         {
             if (eventData.pointerDrag.tag.Equals(tag))
             {
-                placeZRot = 
+                placeZRot =
                     eventData.pointerDrag.GetComponent<RectTransform>().transform.eulerAngles.z;
                 carZRot = GetComponent<RectTransform>().transform.eulerAngles.z;
                 diffZRot = Mathf.Abs(placeZRot - carZRot);
@@ -34,11 +34,12 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                 Debug.Log("Diff X Size: " + xSizeDiff);
                 Debug.Log("Diff Y Size: " + ySizeDiff);
 
-                if((diffZRot <= 7 || (diffZRot >= 353 && diffZRot <= 360)) &&
+                if ((diffZRot <= 7 || (diffZRot >= 353 && diffZRot <= 360)) &&
                     (xSizeDiff <= 0.08f && ySizeDiff <= 0.08f))
                 {
                     Debug.Log("Car placed correctly!");
                     gameObjectsScript.inRightPlace = true;
+                    gameObjectsScript.NotifyCarPlacedCorrectly();
                     eventData.pointerDrag.GetComponent<RectTransform>().anchoredPosition =
                         GetComponent<RectTransform>().anchoredPosition;
 
@@ -55,15 +56,15 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                             break;
 
                         case "Ambulance":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[2]); 
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[2]);
                             break;
 
                         case "School":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[3]);  
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[3]);
                             break;
 
                         case "CementaMasina":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[12]); 
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[12]);
                             break;
 
                         case "b2":
@@ -75,19 +76,19 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                             break;
 
                         case "Policija":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[15]); 
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[15]);
                             break;
 
                         case "e61":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[9]); 
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[9]);
                             break;
 
                         case "Traktors2":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[14]); 
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[14]);
                             break;
 
                         case "e46":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[8]);  
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[8]);
                             break;
 
                         case "Eskavators":
@@ -104,12 +105,13 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                     }
                 }
 
-            } else
+            }
+            else
             {
                 gameObjectsScript.inRightPlace = false;
                 gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[4]);
 
-                switch(eventData.pointerDrag.tag)
+                switch (eventData.pointerDrag.tag)
                 {
                     case "Garbage":
                         gameObjectsScript.garbageTruck.GetComponent<RectTransform>().localPosition =
@@ -117,13 +119,13 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                         break;
 
                     case "Ambulance":
-                       gameObjectsScript.medicine.GetComponent<RectTransform>().localPosition =
-                            gameObjectsScript.medicineCoord;
+                        gameObjectsScript.medicine.GetComponent<RectTransform>().localPosition =
+                             gameObjectsScript.medicineCoord;
                         break;
 
                     case "School":
-                       gameObjectsScript.schoolBus.GetComponent<RectTransform>().localPosition =
-                            gameObjectsScript.schoolBusCoord;
+                        gameObjectsScript.schoolBus.GetComponent<RectTransform>().localPosition =
+                             gameObjectsScript.schoolBusCoord;
                         break;
 
                     default:

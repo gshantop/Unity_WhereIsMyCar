@@ -23,22 +23,22 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
     void Start()
     {
-       canvasGroup = GetComponent<CanvasGroup>();
-       if(canvasGroup == null )
-          canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
-       rectTransform = GetComponent<RectTransform>();
-         
-       image = GetComponent<Image>();
-         if(image != null)
-              originalColor = image.color;
+        rectTransform = GetComponent<RectTransform>();
+
+        image = GetComponent<Image>();
+        if (image != null)
+            originalColor = image.color;
 
         gameObjectsScript = Object.FindFirstObjectByType<GameObjectsScript>();
         screenBoundariesScript = Object.FindFirstObjectByType<ScreenBoundariesScript>();
         StartCoroutine(FadeIn());
     }
 
-   IEnumerator FadeIn()
+    IEnumerator FadeIn()
     {
         float time = 0f;
         while (time < fadeDuration)
@@ -52,45 +52,46 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
     private void Update()
     {
-       float waveOffset = Mathf.Sin(Time.time * waveFrequency) * waveAmplitude;
-         rectTransform.anchoredPosition += 
-            new Vector2(-speed * Time.deltaTime, waveOffset * Time.deltaTime);
+        float waveOffset = Mathf.Sin(Time.time * waveFrequency) * waveAmplitude;
+        rectTransform.anchoredPosition +=
+           new Vector2(-speed * Time.deltaTime, waveOffset * Time.deltaTime);
 
-        if(speed > 0 && transform.position.x < (screenBoundariesScript.minX + 80) 
-            && !isFadingOut)
-        {
-           StartCoroutine(FadeOutAndDestroy());
-            isFadingOut = true;
-        }
-
-        if (speed < 0 && transform.position.x > (screenBoundariesScript.maxX - 80) 
+        if (speed > 0 && transform.position.x < (screenBoundariesScript.minX + 80)
             && !isFadingOut)
         {
             StartCoroutine(FadeOutAndDestroy());
             isFadingOut = true;
         }
 
-        if(CompareTag("Bomb") && !isExploading &&
+        if (speed < 0 && transform.position.x > (screenBoundariesScript.maxX - 80)
+            && !isFadingOut)
+        {
+            StartCoroutine(FadeOutAndDestroy());
+            isFadingOut = true;
+        }
+
+        if (CompareTag("Bomb") && !isExploading &&
             RectTransformUtility.RectangleContainsScreenPoint(
-                rectTransform, Input.mousePosition, Camera.main)) {
+                rectTransform, Input.mousePosition, Camera.main))
+        {
             Debug.Log("The cursor collided with a bomb!");
             TriggerExplosion();
         }
 
-        if(GameObjectsScript.isDragging && !isFadingOut 
+        if (GameObjectsScript.isDragging && !isFadingOut
             && RectTransformUtility.RectangleContainsScreenPoint(
             rectTransform, Input.mousePosition, Camera.main))
         {
             Debug.Log("The cursor collided with a flying object!");
-            if(GameObjectsScript.lastDragged != null)
+            if (GameObjectsScript.lastDragged != null)
             {
                 StartCoroutine(ShrinkAndDestroy(GameObjectsScript.lastDragged, 0.5f));
                 GameObjectsScript.lastDragged = null;
                 GameObjectsScript.isDragging = false;
             }
 
-            if(CompareTag("Bomb"))
-            
+            if (CompareTag("Bomb"))
+
                 StartAndDestroy(Color.red);
 
             else
@@ -113,6 +114,10 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
             yield return null;
         }
+
+        if (gameObjectsScript != null)
+            gameObjectsScript.NotifyCarDestroyed();
+
         Destroy(obj);
     }
 
@@ -120,17 +125,17 @@ public class FlyingObjectControllerScript : MonoBehaviour
     {
         isExploading = true;
 
-        if(gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
+        if (gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
         {
             gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[6], 5f);
         }
 
-        if(TryGetComponent<Animator>(out Animator animator))
+        if (TryGetComponent<Animator>(out Animator animator))
         {
             animator.SetBool("explode", true);
         }
 
-        if(image != null)
+        if (image != null)
         {
             image.color = Color.red;
             StartCoroutine(RecoverColor(0.6f));
@@ -142,8 +147,8 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
     IEnumerator RecoverColor(float seconds)
     {
-       yield return new WaitForSeconds(seconds);
-        if(image != null)
+        yield return new WaitForSeconds(seconds);
+        if (image != null)
         {
             image.color = originalColor;
         }
@@ -167,8 +172,8 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
     IEnumerator WaitBeforeExplode()
     {
-        float radius =  0f;
-        if(TryGetComponent<CircleCollider2D>(out CircleCollider2D circle))
+        float radius = 0f;
+        if (TryGetComponent<CircleCollider2D>(out CircleCollider2D circle))
         {
             radius = circle.radius * transform.localScale.x;
         }
@@ -186,33 +191,33 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
         foreach (Collider2D item in hit)
         {
-           if(item != null && item.gameObject != gameObject)
+            if (item != null && item.gameObject != gameObject)
             {
-                FlyingObjectControllerScript flyingObject = 
+                FlyingObjectControllerScript flyingObject =
                     item.GetComponent<FlyingObjectControllerScript>();
-                if(flyingObject != null && !flyingObject.isExploading)
+                if (flyingObject != null && !flyingObject.isExploading)
                 {
                     flyingObject.StartAndDestroy(Color.cyan);
                 }
-            } 
+            }
         }
     }
 
     public void StartAndDestroy(Color color)
     {
-       if(!isFadingOut)
+        if (!isFadingOut)
         {
             StartCoroutine(FadeOutAndDestroy());
             isFadingOut = true;
 
-            if(image != null)
+            if (image != null)
             {
                 image.color = color;
                 StartCoroutine(RecoverColor(0.5f));
             }
 
             StartCoroutine(Vibrate());
-            if(gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
+            if (gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
             {
                 gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[5]);
             }
