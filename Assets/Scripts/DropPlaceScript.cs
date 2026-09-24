@@ -48,18 +48,54 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                     eventData.pointerDrag.GetComponent<RectTransform>().localRotation =
                         GetComponent<RectTransform>().localRotation;
 
-                    switch(eventData.pointerDrag.tag)
+                    switch (eventData.pointerDrag.tag)
                     {
                         case "Garbage":
                             gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[1]);
                             break;
 
                         case "Ambulance":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[2]);
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[2]); 
                             break;
 
                         case "School":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[3]);
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[3]);  
+                            break;
+
+                        case "CementaMasina":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[12]); 
+                            break;
+
+                        case "b2":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[11]);
+                            break;
+
+                        case "Traktors":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[13]);
+                            break;
+
+                        case "Policija":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[15]); 
+                            break;
+
+                        case "e61":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[9]); 
+                            break;
+
+                        case "Traktors2":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[14]); 
+                            break;
+
+                        case "e46":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[8]);  
+                            break;
+
+                        case "Eskavators":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[10]);
+                            break;
+
+                        case "Ugunsdzeseji":
+                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[7]);
                             break;
 
                         default:
