@@ -29,7 +29,7 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.UpArrow))
             {
-                if(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y < 0.9f)
+                if(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y < 1.5f)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                     new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x,
@@ -39,7 +39,7 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.DownArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y > 0.3f)
+                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y > 1f)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                     new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x,
@@ -49,7 +49,7 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.LeftArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x > 0.3f)
+                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x > 1f)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                     new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x - 0.001f,
@@ -59,7 +59,7 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.RightArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x < 0.9f)
+                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x < 1.5f)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                     new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x + 0.001f,

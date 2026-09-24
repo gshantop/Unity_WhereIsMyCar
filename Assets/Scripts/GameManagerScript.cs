@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using TMPro;
 
 public class GameManagerScript : MonoBehaviour
@@ -19,11 +20,18 @@ public class GameManagerScript : MonoBehaviour
     public float threeStarTime = 30f;
     public float twoStarTime = 60f;
 
+    [Header("Dzīvības (sirsniņas)")]
+    public int maxLives = 3;
+    public Image[] hearts;
+    public Sprite fullHeartSprite;
+    public Sprite emptyHeartSprite;
+
     private GameObjectsScript gameObjectsScript;
     private float elapsedTime = 0f;
     private bool gameActive = true;
     private int totalCars;
     private int placedCars = 0;
+    private int lostCars = 0;
 
     void Start()
     {
@@ -32,6 +40,7 @@ public class GameManagerScript : MonoBehaviour
 
         totalCars = gameObjectsScript.dropPlaces.Length;
         placedCars = 0;
+        lostCars = 0;
         elapsedTime = 0f;
         gameActive = true;
 
@@ -40,6 +49,8 @@ public class GameManagerScript : MonoBehaviour
 
         Time.timeScale = 1f;
         UpdateTimerText();
+        SetHeartsVisible(true);
+        UpdateHearts();
     }
 
     void Update()
@@ -64,7 +75,6 @@ public class GameManagerScript : MonoBehaviour
         return string.Format("{0:00}:{1:00}:{2:00}", h, m, s);
     }
 
-    // Sauc DropPlaceScript, kad mašīna nolikta pareizajā vietā
     public void RegisterCarPlaced()
     {
         if (!gameActive) return;
@@ -76,17 +86,31 @@ public class GameManagerScript : MonoBehaviour
         }
     }
 
-    // Sauc FlyingObjectControllerScript, kad mašīna tiek iznīcināta lidojoša objekta dēļ
     public void RegisterCarDestroyed()
     {
         if (!gameActive) return;
-        Lose();
+
+        lostCars++;
+        totalCars--;
+        UpdateHearts();
+
+        if (lostCars >= maxLives)
+        {
+            Lose();
+            return;
+        }
+
+        if (placedCars >= totalCars)
+        {
+            Win();
+        }
     }
 
     void Win()
     {
         gameActive = false;
         Time.timeScale = 0f;
+        SetHeartsVisible(false);
 
         if (winPanel != null) winPanel.SetActive(true);
         if (finalTimeText != null) finalTimeText.text = FormatTime(elapsedTime);
@@ -98,6 +122,7 @@ public class GameManagerScript : MonoBehaviour
     {
         gameActive = false;
         Time.timeScale = 0f;
+        SetHeartsVisible(false);
 
         if (losePanel != null) losePanel.SetActive(true);
     }
@@ -117,6 +142,33 @@ public class GameManagerScript : MonoBehaviour
         {
             if (stars[i] != null)
                 stars[i].SetActive(i < count);
+        }
+    }
+
+    void UpdateHearts()
+    {
+        if (hearts == null) return;
+
+        int livesLeft = Mathf.Max(0, maxLives - lostCars);
+
+        for (int i = 0; i < hearts.Length; i++)
+        {
+            if (hearts[i] == null) continue;
+
+            Sprite sprite = (i < livesLeft) ? fullHeartSprite : emptyHeartSprite;
+            if (sprite != null)
+                hearts[i].sprite = sprite;
+        }
+    }
+
+    void SetHeartsVisible(bool visible)
+    {
+        if (hearts == null) return;
+
+        for (int i = 0; i < hearts.Length; i++)
+        {
+            if (hearts[i] != null)
+                hearts[i].gameObject.SetActive(visible);
         }
     }
 
