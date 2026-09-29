@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class DropPlaceScript : MonoBehaviour, IDropHandler
@@ -7,7 +7,6 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
     private Vector3 placeSize, carSize;
     private float xSizeDiff, ySizeDiff;
     public GameObjectsScript gameObjectsScript;
-
 
     void Awake()
     {
@@ -21,14 +20,17 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
         {
             if (eventData.pointerDrag.tag.Equals(tag))
             {
-                placeZRot =
-                    eventData.pointerDrag.GetComponent<RectTransform>().transform.eulerAngles.z;
-                carZRot = GetComponent<RectTransform>().transform.eulerAngles.z;
+                RectTransform carRect = eventData.pointerDrag.GetComponent<RectTransform>();
+                RectTransform placeRect = GetComponent<RectTransform>();
+
+                // Rotācijas un izmēra starpība
+                placeZRot = carRect.transform.eulerAngles.z;
+                carZRot = placeRect.transform.eulerAngles.z;
                 diffZRot = Mathf.Abs(placeZRot - carZRot);
                 Debug.Log("Diff Z Rot: " + diffZRot);
 
-                placeSize = eventData.pointerDrag.GetComponent<RectTransform>().localScale;
-                carSize = GetComponent<RectTransform>().localScale;
+                placeSize = carRect.localScale;
+                carSize = placeRect.localScale;
                 xSizeDiff = Mathf.Abs(placeSize.x - carSize.x);
                 ySizeDiff = Mathf.Abs(placeSize.y - carSize.y);
                 Debug.Log("Diff X Size: " + xSizeDiff);
@@ -40,99 +42,125 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                     Debug.Log("Car placed correctly!");
                     gameObjectsScript.inRightPlace = true;
                     gameObjectsScript.NotifyCarPlacedCorrectly();
-                    eventData.pointerDrag.GetComponent<RectTransform>().anchoredPosition =
-                        GetComponent<RectTransform>().anchoredPosition;
 
-                    eventData.pointerDrag.GetComponent<RectTransform>().localScale =
-                        GetComponent<RectTransform>().localScale;
+                    carRect.anchoredPosition = placeRect.anchoredPosition;
+                    carRect.localScale = placeRect.localScale;
+                    carRect.localRotation = placeRect.localRotation;
 
-                    eventData.pointerDrag.GetComponent<RectTransform>().localRotation =
-                        GetComponent<RectTransform>().localRotation;
-
-                    switch (eventData.pointerDrag.tag)
-                    {
-                        case "Garbage":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[1]);
-                            break;
-
-                        case "Ambulance":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[2]);
-                            break;
-
-                        case "School":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[3]);
-                            break;
-
-                        case "CementaMasina":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[12]);
-                            break;
-
-                        case "b2":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[11]);
-                            break;
-
-                        case "Traktors":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[13]);
-                            break;
-
-                        case "Policija":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[15]);
-                            break;
-
-                        case "e61":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[9]);
-                            break;
-
-                        case "Traktors2":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[14]);
-                            break;
-
-                        case "e46":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[8]);
-                            break;
-
-                        case "Eskavators":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[10]);
-                            break;
-
-                        case "Ugunsdzeseji":
-                            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[7]);
-                            break;
-
-                        default:
-                            Debug.Log("No matching tag found for the dropped object.");
-                            break;
-                    }
+                    PlayCarSound(eventData.pointerDrag.tag);
                 }
-
+                else
+                {
+                    // Pareizā vieta, bet nepareizs izmērs vai rotācija - atgriežam sākumā
+                    gameObjectsScript.inRightPlace = false;
+                    gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[4]);
+                    ResetCar(eventData.pointerDrag.tag);
+                }
             }
             else
             {
+                // Nepareiza vieta
                 gameObjectsScript.inRightPlace = false;
                 gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[4]);
-
-                switch (eventData.pointerDrag.tag)
-                {
-                    case "Garbage":
-                        gameObjectsScript.garbageTruck.GetComponent<RectTransform>().localPosition =
-                            gameObjectsScript.garbageTruckCoord;
-                        break;
-
-                    case "Ambulance":
-                        gameObjectsScript.medicine.GetComponent<RectTransform>().localPosition =
-                             gameObjectsScript.medicineCoord;
-                        break;
-
-                    case "School":
-                        gameObjectsScript.schoolBus.GetComponent<RectTransform>().localPosition =
-                             gameObjectsScript.schoolBusCoord;
-                        break;
-
-                    default:
-                        Debug.Log("No matching tag found for the dropped object.");
-                        break;
-                }
+                ResetCar(eventData.pointerDrag.tag);
             }
+        }
+    }
+
+    // Atskaņo mašīnas skaņu pēc taga
+    private void PlayCarSound(string carTag)
+    {
+        int soundIndex;
+
+        switch (carTag)
+        {
+            case "Garbage": soundIndex = 1; break;
+            case "Ambulance": soundIndex = 2; break;
+            case "School": soundIndex = 3; break;
+            case "CementaMasina": soundIndex = 12; break;
+            case "b2": soundIndex = 11; break;
+            case "Traktors": soundIndex = 13; break;
+            case "Policija": soundIndex = 15; break;
+            case "e61": soundIndex = 9; break;
+            case "Traktors2": soundIndex = 14; break;
+            case "e46": soundIndex = 8; break;
+            case "Eskavators": soundIndex = 10; break;
+            case "Ugunsdzeseji": soundIndex = 7; break;
+            default:
+                Debug.Log("No matching tag found for the dropped object.");
+                return;
+        }
+
+        gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[soundIndex]);
+    }
+
+    private void ResetCar(string carTag)
+    {
+        switch (carTag)
+        {
+            case "Garbage":
+                gameObjectsScript.garbageTruck.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.garbageTruckCoord;
+                break;
+
+            case "Ambulance":
+                gameObjectsScript.medicine.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.medicineCoord;
+                break;
+
+            case "School":
+                gameObjectsScript.schoolBus.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.schoolBusCoord;
+                break;
+
+            case "CementaMasina":
+                gameObjectsScript.cementamasina.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.cementamasinaCoord;
+                break;
+
+            case "b2":
+                gameObjectsScript.b2.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.b2Coord;
+                break;
+
+            case "Traktors":
+                gameObjectsScript.traktors.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.traktorsCoord;
+                break;
+
+            case "Policija":
+                gameObjectsScript.policija.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.policijaCoord;
+                break;
+
+            case "e61":
+                gameObjectsScript.e61.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.e61Coord;
+                break;
+
+            case "Traktors2":
+                gameObjectsScript.traktors2.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.traktors2Coord;
+                break;
+
+            case "e46":
+                gameObjectsScript.e46.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.e46Coord;
+                break;
+
+            case "Eskavators":
+                gameObjectsScript.eskavators.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.eskavatorsCoord;
+                break;
+
+            case "Ugunsdzeseji":
+                gameObjectsScript.ugunsdzeseji.GetComponent<RectTransform>().localPosition =
+                    gameObjectsScript.ugunsdzesejiCoord;
+                break;
+
+            default:
+                Debug.Log("No matching tag found for the dropped object.");
+                break;
         }
     }
 }
