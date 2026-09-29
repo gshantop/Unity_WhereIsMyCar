@@ -48,6 +48,9 @@ public class GameObjectsScript : MonoBehaviour
     public AudioSource carSoundSource;
     public AudioClip[] sounds;
 
+    [Header("Nejaušs virziens (pa kreisi / pa labi)")]
+    public bool randomFlip = true;          // vai mašīnām piemērot nejaušu virzienu
+
     [HideInInspector]
     public bool inRightPlace = false;
 
@@ -115,6 +118,15 @@ public class GameObjectsScript : MonoBehaviour
             RectTransform point = availablePoints[index];
 
             carRt.anchoredPosition3D = point.anchoredPosition3D;
+
+            // Nejaušs virziens: mašīna skatās pa kreisi vai pa labi (X ass apgriešana)
+            if (randomFlip)
+            {
+                Vector3 scale = carRt.localScale;
+                float absX = Mathf.Abs(scale.x);
+                scale.x = Random.value < 0.5f ? absX : -absX;
+                carRt.localScale = scale;
+            }
 
             index++;
         }
