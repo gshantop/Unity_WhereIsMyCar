@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
@@ -26,6 +27,9 @@ public class GameManagerScript : MonoBehaviour
     public Sprite fullHeartSprite;
     public Sprite emptyHeartSprite;
 
+    // Globāls karogs: citi skripti var pārbaudīt, vai spēle ir beigusies
+    public static bool GameOver { get; private set; }
+
     private GameObjectsScript gameObjectsScript;
     private float elapsedTime = 0f;
     private bool gameActive = true;
@@ -35,6 +39,8 @@ public class GameManagerScript : MonoBehaviour
 
     void Start()
     {
+        GameOver = false; // Atiestatām karogu jaunai spēlei
+
         gameObjectsScript = Object.FindFirstObjectByType<GameObjectsScript>();
         gameObjectsScript.gameManagerScript = this;
 
@@ -109,7 +115,7 @@ public class GameManagerScript : MonoBehaviour
     void Win()
     {
         gameActive = false;
-        Time.timeScale = 0f;
+        FreezeGame();
         SetHeartsVisible(false);
 
         if (winPanel != null) winPanel.SetActive(true);
@@ -121,10 +127,61 @@ public class GameManagerScript : MonoBehaviour
     void Lose()
     {
         gameActive = false;
-        Time.timeScale = 0f;
+        FreezeGame();
         SetHeartsVisible(false);
 
         if (losePanel != null) losePanel.SetActive(true);
+    }
+
+    // Pilnībā iesaldē spēli: fiziku, animācijas, daļiņas un vilkšanu
+    void FreezeGame()
+    {
+        GameOver = true;
+        Time.timeScale = 0f;
+
+        // 2D fizika: apturam visus objektus
+        foreach (Rigidbody2D rb in Object.FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None))
+        {
+            rb.simulated = false;
+        }
+
+        // 3D fizika: apturam visus objektus
+        foreach (Rigidbody rb in Object.FindObjectsByType<Rigidbody>(FindObjectsSortMode.None))
+        {
+            rb.isKinematic = true;
+        }
+
+        // Animācijas
+        foreach (Animator anim in Object.FindObjectsByType<Animator>(FindObjectsSortMode.None))
+        {
+            anim.speed = 0f;
+        }
+
+        // Daļiņu efekti
+        foreach (ParticleSystem ps in Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None))
+        {
+            ps.Pause();
+        }
+
+        // Izslēdzam vilkšanas/klikšķu skriptus (bet ne pogas un uzvaras/zaudējuma paneļus)
+        foreach (MonoBehaviour mb in Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+        {
+            if (mb == this) continue;
+            if (mb is BaseInputModule) continue;
+            if (mb is EventSystem) continue;
+            if (mb is Selectable) continue;
+            if (winPanel != null && mb.transform.IsChildOf(winPanel.transform)) continue;
+            if (losePanel != null && mb.transform.IsChildOf(losePanel.transform)) continue;
+
+            if (mb is IDragHandler ||
+                mb is IBeginDragHandler ||
+                mb is IEndDragHandler ||
+                mb is IPointerDownHandler ||
+                mb is IPointerUpHandler)
+            {
+                mb.enabled = false;
+            }
+        }
     }
 
     int CalculateStars(float time)
