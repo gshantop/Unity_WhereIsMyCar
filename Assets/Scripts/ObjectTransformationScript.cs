@@ -4,6 +4,9 @@ public class ObjectTransformationScript : MonoBehaviour
 {
     public GameObjectsScript gameObjectsScript;
 
+    public float minScale = 0.4f;
+    public float maxScale = 1.6f;
+
 
     void Awake()
     {
@@ -15,13 +18,13 @@ public class ObjectTransformationScript : MonoBehaviour
     {
         if (GameObjectsScript.lastDragged != null)
         {
-            if(Input.GetKey(KeyCode.Z))
+            if (Input.GetKey(KeyCode.Z))
             {
                 GameObjectsScript.lastDragged.GetComponent<RectTransform>().Rotate(
                     0, 0, Time.deltaTime * 12);
             }
 
-            if(Input.GetKey(KeyCode.X))
+            if (Input.GetKey(KeyCode.X))
             {
                 GameObjectsScript.lastDragged.GetComponent<RectTransform>().Rotate(
                     0, 0, -Time.deltaTime * 12);
@@ -29,7 +32,7 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.UpArrow))
             {
-                if(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y < 1.5f)
+                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y < maxScale)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                     new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x,
@@ -39,7 +42,7 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.DownArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y > 1f)
+                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y > minScale)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
                     new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x,
@@ -49,20 +52,22 @@ public class ObjectTransformationScript : MonoBehaviour
 
             if (Input.GetKey(KeyCode.LeftArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x > 1f)
+                float x = GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x;
+                if (Mathf.Abs(x) > minScale)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
-                    new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x - 0.001f,
+                    new Vector3(Mathf.Sign(x) * (Mathf.Abs(x) - 0.001f),
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y, 1f);
                 }
             }
 
             if (Input.GetKey(KeyCode.RightArrow))
             {
-                if (GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x < 1.5f)
+                float x = GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x;
+                if (Mathf.Abs(x) < maxScale)
                 {
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale =
-                    new Vector3(GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.x + 0.001f,
+                    new Vector3(Mathf.Sign(x) * (Mathf.Abs(x) + 0.001f),
                     GameObjectsScript.lastDragged.GetComponent<RectTransform>().localScale.y, 1f);
                 }
             }
