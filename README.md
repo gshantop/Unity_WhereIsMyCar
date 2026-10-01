@@ -3,7 +3,7 @@
 <p align="center">
   <img alt="Unity" src="https://img.shields.io/badge/Unity-2D-black?logo=unity">
   <img alt="C#" src="https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white">
-  <a href="https://github.com/gshantop/Unity_WhereIsMyCar/releases/tag/1.0"><img alt="Release" src="https://img.shields.io/badge/release-1.0-blue"></a>
+  <a href="https://github.com/gshantop/Unity_WhereIsMyCar/releases/tag/2.0"><img alt="Release" src="https://img.shields.io/badge/release-2.0-blue"></a>
 </p>
 
 2D spēle, kas izstrādāta ar **Unity**. Spēlētājs ar peli velk objektus (mašīnas) spēles laukumā, vienlaikus izvairoties no lidojošiem šķēršļiem un bumbām.
