@@ -19,11 +19,6 @@
 - [Uzstādīšana un palaišana](#-uzstādīšana-un-palaišana)
 - [Projekta struktūra](#-projekta-struktūra)
 - [Darāmo darbu saraksts](#-darāmo-darbu-saraksts)
-- [Izstrādes gaita](#-izstrādes-gaita)
-- [Kā piedalīties](#-kā-piedalīties)
-- [Licence](#-licence)
-- [Versijas](#-versijas)
-- [Autori](#-autori)
 
 ---
 
