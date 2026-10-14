@@ -1,56 +1,85 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 public class ObjectTransformationScript : MonoBehaviour
 {
     public float rotationSpeed = 90f;
     public float scaleSpeed = 0.5f;
+
+    public float minFactor = 0.5f;
+    public float maxFactor = 1.5f;
+
     private bool rotateCW, rotateCCW, scaleUpY, scaleDownY, scaleUpX, scaleDownX;
     public static bool isTransforming = false;
 
-
+    private readonly Dictionary<GameObject, Vector2> baseScales = new Dictionary<GameObject, Vector2>();
 
     void Update()
     {
+        if (!Input.GetMouseButton(0) && Input.touchCount == 0)
+        {
+            ResetFlags();
+        }
+
         if (GameObjectsScript.lastDragged == null)
         {
+            isTransforming = false;
             return;
         }
 
-        RectTransform rc = GameObjectsScript.lastDragged.GetComponent<RectTransform>();
+        GameObject obj = GameObjectsScript.lastDragged;
+        RectTransform rc = obj.GetComponent<RectTransform>();
 
-        if (rotateCW)
+        if (!baseScales.ContainsKey(obj))
         {
-            rc.Rotate(0, 0, -rotationSpeed * Time.deltaTime);
+            Vector3 ls = rc.localScale;
+            baseScales[obj] = new Vector2(
+                Mathf.Max(0.01f, Mathf.Abs(ls.x)),
+                Mathf.Max(0.01f, Mathf.Abs(ls.y)));
+        }
+        Vector2 b = baseScales[obj];
+
+        float rot = (rotateCCW ? 1f : 0f) - (rotateCW ? 1f : 0f);
+        if (rot != 0f)
+        {
+            rc.Rotate(0, 0, rot * rotationSpeed * Time.deltaTime);
         }
 
-        if (rotateCCW)
-        {
-            rc.Rotate(0, 0, rotationSpeed * Time.deltaTime);
-        }
+        float dx = (scaleUpX ? 1f : 0f) - (scaleDownX ? 1f : 0f);
+        float dy = (scaleUpY ? 1f : 0f) - (scaleDownY ? 1f : 0f);
 
-        if (scaleUpY && rc.localScale.y < 0.9f)
+        if (dx != 0f || dy != 0f)
         {
-            rc.localScale += new Vector3(0, scaleSpeed * Time.deltaTime, 0);
-        }
+            Vector3 s = rc.localScale;
 
-        if (scaleDownY && rc.localScale.y > 0.3f)
-        {
-            rc.localScale -= new Vector3(0, scaleSpeed * Time.deltaTime, 0);
-        }
+            float signX = s.x < 0f ? -1f : 1f;
+            float signY = s.y < 0f ? -1f : 1f;
 
-        if (scaleUpX && rc.localScale.x < 0.9f)
-        {
-            rc.localScale += new Vector3(scaleSpeed * Time.deltaTime, 0, 0);
-        }
+            float absX = Mathf.Abs(s.x);
+            float absY = Mathf.Abs(s.y);
 
-        if (scaleDownX && rc.localScale.x > 0.3f)
-        {
-            rc.localScale -= new Vector3(scaleSpeed * Time.deltaTime, 0, 0);
+            if (dx != 0f)
+                absX = Mathf.Clamp(absX + dx * scaleSpeed * b.x * Time.deltaTime,
+                                   b.x * minFactor, b.x * maxFactor);
+            if (dy != 0f)
+                absY = Mathf.Clamp(absY + dy * scaleSpeed * b.y * Time.deltaTime,
+                                   b.y * minFactor, b.y * maxFactor);
+
+            s.x = absX * signX;
+            s.y = absY * signY;
+            rc.localScale = s;
         }
 
         isTransforming =
             rotateCW || rotateCCW || scaleUpY || scaleDownY || scaleUpX || scaleDownX;
+    }
+
+    private void ResetFlags()
+    {
+        rotateCW = rotateCCW = false;
+        scaleUpY = scaleDownY = scaleUpX = scaleDownX = false;
+        isTransforming = false;
     }
 
     public void StartRotateCW(BaseEventData eventData) { rotateCW = true; }
