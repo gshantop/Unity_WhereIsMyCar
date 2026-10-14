@@ -6,8 +6,11 @@ public class DragAndDropScript : MonoBehaviour,
 {
     public GameObjectsScript gameObjectsScript;
     private CanvasGroup canvasGroup;
-    private RectTransform rectTransform;
     public ScreenBoundariesScript screenBoundariesScript;
+
+    private Vector3 dragOffsetWorld;
+    private Camera mainCamera;
+    private Canvas canvas;
 
     void Awake()
     {
@@ -17,76 +20,98 @@ public class DragAndDropScript : MonoBehaviour,
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        rectTransform = GetComponent<RectTransform>();
-        gameObjectsScript = Object.FindFirstObjectByType<GameObjectsScript>();
-        screenBoundariesScript = Object.FindFirstObjectByType<ScreenBoundariesScript>();
+        if (gameObjectsScript == null)
+        {
+            gameObjectsScript = Object.FindFirstObjectByType<GameObjectsScript>();
+        }
+
+        if (screenBoundariesScript == null)
+        {
+            screenBoundariesScript = Object.FindFirstObjectByType<ScreenBoundariesScript>();
+        }
+
+        canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            mainCamera = canvas.worldCamera;
+
+        }
+        else
+            Debug.LogWarning("Canvas not found in parent hierarchy of " + gameObject.name);
     }
 
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (Input.GetMouseButton(0) && !Input.GetMouseButton(1) && !Input.GetMouseButton(2))
+        Debug.Log("Clicked on " + gameObject.name);
+
+        if (gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
         {
-            Debug.Log("Left mouse button clicked on " + gameObject.name);
             gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[0]);
         }
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (Input.GetMouseButton(0) && !Input.GetMouseButton(1) && !Input.GetMouseButton(2))
+        Debug.Log("Start drag!");
+        GameObjectsScript.isDragging = true;
+        canvasGroup.alpha = 0.6f;
+        canvasGroup.blocksRaycasts = false;
+        int lastIndex = transform.parent.childCount - 1;
+        int positionIndex = Mathf.Max(0, lastIndex - 1);
+        transform.SetSiblingIndex(positionIndex);
+
+        Vector3 cursorWorldPos;
+
+        if (ScreenToWorldPoint(eventData.position, out cursorWorldPos))
         {
-            GameObjectsScript.isDragging = true;
-            canvasGroup.alpha = 0.6f;
-            canvasGroup.blocksRaycasts = false;
-            // Mašīna vienmēr paliek zem SpawnPoint, lai mākoņi un lidmašīnas lido virs tās
-            FlyingObjectSpawnScript spawner = Object.FindFirstObjectByType<FlyingObjectSpawnScript>();
-            if (spawner != null && spawner.spawnPoint != null && spawner.spawnPoint.parent == transform.parent)
-            {
-                int spawnIndex = spawner.spawnPoint.GetSiblingIndex();
-                int myIndex = transform.GetSiblingIndex();
-                transform.SetSiblingIndex(myIndex < spawnIndex ? spawnIndex - 1 : spawnIndex);
-            }
-            else
-            {
-                int lastIndex = transform.parent.childCount - 1;
-                transform.SetSiblingIndex(Mathf.Max(0, lastIndex - 1));
-            }
+            dragOffsetWorld = transform.position - cursorWorldPos;
 
-            Vector3 cursorWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(
-                Input.mousePosition.x, Input.mousePosition.y,
-                screenBoundariesScript.screenPoint.z));
-            rectTransform.position = cursorWorldPos;
-            screenBoundariesScript.screenPoint =
-                Camera.main.WorldToScreenPoint(rectTransform.localPosition);
-
-            screenBoundariesScript.offset = rectTransform.localPosition -
-                Camera.main.ScreenToWorldPoint(new Vector3(
-                    Input.mousePosition.x, Input.mousePosition.y,
-                    screenBoundariesScript.screenPoint.z));
-            GameObjectsScript.lastDragged = eventData.pointerDrag;
         }
+        else
+        {
+            dragOffsetWorld = Vector3.zero;
+        }
+        GameObjectsScript.lastDragged = eventData.pointerDrag;
+    }
+
+    private bool ScreenToWorldPoint(Vector2 screenPosition, out Vector3 worldPosition)
+    {
+        worldPosition = Vector3.zero;
+        if (mainCamera == null)
+        {
+            Debug.LogWarning("Main camera is not assigned.");
+            return false;
+        }
+
+        float z = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
+        Vector3 screenPoint = new Vector3(screenPosition.x, screenPosition.y, z);
+        worldPosition = mainCamera.ScreenToWorldPoint(screenPoint);
+        return true;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (Input.GetMouseButton(0) && !Input.GetMouseButton(1) && !Input.GetMouseButton(2))
-        {
-            Vector3 cursScreenPoint =
-              new Vector3(Input.mousePosition.x,
-              Input.mousePosition.y,
-              screenBoundariesScript.screenPoint.z);
-            Vector3 curPosition
-                = Camera.main.ScreenToWorldPoint(cursScreenPoint) +
-                  screenBoundariesScript.offset;
 
-            rectTransform.position = screenBoundariesScript.GetClampedPosition(curPosition);
+        Vector3 pointerWorld;
+        if (!ScreenToWorldPoint(eventData.position, out pointerWorld))
+        {
+            return;
         }
+        Vector3 desired = pointerWorld + dragOffsetWorld;
+        desired.z = transform.position.z;
+
+        screenBoundariesScript.RecalculateBounds();
+        Vector2 clamped = screenBoundariesScript.GetClampedPosition(desired);
+
+        transform.position = new Vector3(clamped.x, clamped.y, desired.z);
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (Input.GetMouseButtonUp(0))
+
+        if (gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
         {
+            gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[0]);
             GameObjectsScript.isDragging = false;
             Debug.Log("OnEndDrag called for " + gameObject.name);
             canvasGroup.alpha = 1f;
@@ -100,19 +125,5 @@ public class DragAndDropScript : MonoBehaviour,
 
             gameObjectsScript.inRightPlace = false;
         }
-    }
-
-
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 }

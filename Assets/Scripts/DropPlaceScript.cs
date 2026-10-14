@@ -15,10 +15,9 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        if ((eventData.pointerDrag != null) && Input.GetMouseButtonUp(0) &&
-            (!Input.GetMouseButton(2)))
-        {
-            if (eventData.pointerDrag.tag.Equals(tag))
+        if (eventData.pointerDrag == null)
+            return;
+        if (eventData.pointerDrag.tag.Equals(tag))
             {
                 RectTransform carRect = eventData.pointerDrag.GetComponent<RectTransform>();
                 RectTransform placeRect = GetComponent<RectTransform>();
@@ -64,7 +63,6 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler
                 gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[4]);
                 ResetCar(eventData.pointerDrag.tag);
             }
-        }
     }
 
     // Atskaņo mašīnas skaņu pēc taga
