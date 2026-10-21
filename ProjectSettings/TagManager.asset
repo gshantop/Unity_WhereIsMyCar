@@ -8,6 +8,16 @@ TagManager:
   - Ambulance
   - School
   - Bomb
+  - Policija
+  - CementaMasina
+  - b2
+  - Traktors
+  - Traktors2
+  - Ugunsdzeseji
+  - e46
+  - e61
+  - Eskavators
+  - InterstitialAdbutton
   layers:
   - Default
   - TransparentFX
