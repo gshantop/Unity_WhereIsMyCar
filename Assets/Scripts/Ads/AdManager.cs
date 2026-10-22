@@ -9,19 +9,27 @@ public class AdManager : MonoBehaviour
     [SerializeField] bool turnOffInterstitialAds = false;
     private bool firstAdShown = false;
 
+    public RewardedAds rewardedAds;
+    [SerializeField] bool turnOffRewardedAds = false;
+
+    public BannerAd bannerAd;
+    [SerializeField] bool turnOffBannerAds = false;
+
     public static AdManager Instance { get; private set; }
+
     private bool firstSceneLoaded = false;
+
 
     private void Awake()
     {
-        if(adsInitializer == null)
+        if (adsInitializer == null)
         {
             adsInitializer = FindFirstObjectByType<AdsInitializer>();
         }
 
-        if(Instance != null && Instance != this)
+        if (Instance != null && Instance != this)
         {
-            Destroy(this.gameObject);
+            Destroy(gameObject);
             return;
         }
 
@@ -34,8 +42,18 @@ public class AdManager : MonoBehaviour
     {
         if (!turnOffInterstitialAds)
         {
-            interstitialAd.OnIntertitialAdReady += HandleInterstitialReady;
+            interstitialAd.OnInterstitialAdReady += HandleInterstitialReady;
             interstitialAd.LoadAd();
+        }
+
+        if (!turnOffRewardedAds)
+        {
+            rewardedAds.LoadAd();
+        }
+
+        if (!turnOffBannerAds)
+        {
+            bannerAd.LoadBanner();
         }
     }
 
@@ -46,6 +64,7 @@ public class AdManager : MonoBehaviour
             Debug.Log("Showing interstitial ad for the first time!");
             interstitialAd.ShowAd();
             firstAdShown = true;
+
         }
         else
         {
@@ -68,13 +87,28 @@ public class AdManager : MonoBehaviour
         if (interstitialAd == null)
             interstitialAd = FindFirstObjectByType<InterstitialAd>();
 
-        Button interstitialButton = 
-            GameObject.FindGameObjectWithTag("InterstitialAdbutton")
-            .GetComponent<Button>();
-
-        if(interstitialAd != null && interstitialButton != null)
+        Button interstitialButton =
+          GameObject.FindGameObjectWithTag("InterstitialAdButton").GetComponent<Button>();
+        if (interstitialAd != null && interstitialButton != null)
         {
-            interstitialAd.setButton(interstitialButton);
+            interstitialAd.SetButton(interstitialButton);
+        }
+
+        if (rewardedAds == null)
+            rewardedAds = FindFirstObjectByType<RewardedAds>();
+
+        Button rewardedAdButton =
+          GameObject.FindGameObjectWithTag("RewardedAdButton").GetComponent<Button>();
+        if (rewardedAds != null && rewardedAdButton != null)
+        {
+            rewardedAds.SetButton(rewardedAdButton);
+        }
+
+        Button bannerAdButton =
+         GameObject.FindGameObjectWithTag("BannerAdButton").GetComponent<Button>();
+        if (bannerAd != null && bannerAdButton != null)
+        {
+            bannerAd.SetButton(bannerAdButton);
         }
 
         if (!firstSceneLoaded)
@@ -84,7 +118,8 @@ public class AdManager : MonoBehaviour
             return;
         }
 
-        Debug.Log("Scene reloaded!");
+        Debug.Log("Scene relodaded!");
         HandleAdsInitialized();
     }
+
 }

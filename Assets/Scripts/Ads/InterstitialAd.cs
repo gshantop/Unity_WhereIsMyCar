@@ -1,43 +1,42 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Advertisements;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
-using Debug = UnityEngine.Debug;
 
 public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowListener
 {
-
-    [SerializeField] string _androidAdUnityId = "Interstitial_Android";
-    string _adUnitAd;
-    public event Action OnIntertitialAdReady;
+    [SerializeField] string _androidAdUnitId = "Interstitial_Android";
+    string _adUnitId;
+    public event Action OnInterstitialAdReady;
     public bool isReady = false;
     [SerializeField] Button _interstitialAdButton;
-    
+
     void Awake()
     {
-        _androidAdUnityId = _androidAdUnityId;
+        _adUnitId = _androidAdUnitId;
     }
 
     private void Update()
     {
-        if(AdManager.Instance != null && AdManager.Instance.interstitialAd != null) 
+        if (AdManager.Instance != null && AdManager.Instance.interstitialAd != null)
         {
             _interstitialAdButton.interactable = AdManager.Instance.interstitialAd.isReady;
         }
     }
 
-    public void OnInterstitialAdbuttonClicked()
+
+    public void OnInterstitialAdButtonClicked()
     {
-        Debug.Log("Interstitial Ad button Clicked");
+        Debug.Log("Interstitial Ad Button Clicked");
         ShowInterstitial();
     }
 
     public void ShowInterstitial()
     {
-        if(AdManager.Instance.interstitialAd != null &&
+        if (AdManager.Instance.interstitialAd != null &&
             AdManager.Instance.interstitialAd.isReady)
         {
             Debug.Log("Showing interstitial ad manually!");
@@ -54,7 +53,10 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
     {
         if (isReady)
         {
-            Advertisement.Show(_androidAdUnityId, this);
+            if (AdManager.Instance.bannerAd.isBannerVisible)
+                AdManager.Instance.bannerAd.HideBannerAd();
+
+            Advertisement.Show(_adUnitId, this);
             isReady = false;
 
         }
@@ -62,6 +64,7 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         {
             Debug.LogWarning("Interstitial ad is not ready yet!");
         }
+
     }
 
     public void LoadAd()
@@ -73,15 +76,16 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         }
 
         Debug.Log("Loading interstitial ad...");
-        Advertisement.Load(_androidAdUnityId, this);
+        Advertisement.Load(_adUnitId, this);
     }
+
 
     public void OnUnityAdsAdLoaded(string placementId)
     {
         Debug.Log("Interstitial ad loaded successfully!");
         _interstitialAdButton.interactable = true;
         isReady = true;
-        OnIntertitialAdReady?.Invoke();
+        OnInterstitialAdReady?.Invoke();
     }
 
     public void OnUnityAdsFailedToLoad(string placementId, UnityAdsLoadError error, string message)
@@ -102,6 +106,7 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
             Debug.Log("Interstitial ad completed successfully!");
             StartCoroutine(SlowDownTimeTemporarily(30f));
             LoadAd();
+
         }
         else
         {
@@ -128,17 +133,19 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
 
     public void OnUnityAdsShowStart(string placementId)
     {
-        Debug.Log("Interstitial ad startet showing!");
+        Debug.Log("Interstitial ad started showing!");
         Time.timeScale = 0f;
     }
 
-    public void setButton(Button button)
+    public void SetButton(Button button)
     {
-        if (button = null)
+        if (button == null)
             return;
+
         button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(OnInterstitialAdbuttonClicked);
+        button.onClick.AddListener(OnInterstitialAdButtonClicked);
         _interstitialAdButton = button;
         _interstitialAdButton.interactable = false;
     }
+
 }
