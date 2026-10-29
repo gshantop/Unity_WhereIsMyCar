@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -97,7 +97,8 @@ public class FlyingObjectControllerScript : MonoBehaviour
             Debug.Log("The cursor collided with a flying object!");
             if (GameObjectsScript.lastDragged != null)
             {
-                StartCoroutine(ShrinkAndDestroy(GameObjectsScript.lastDragged, 0.5f));
+                // Korutīna uz GameObjectsScript, lai tā nepazustu, ja šis objekts tiek iznīcināts agrāk
+                gameObjectsScript.StartCoroutine(ShrinkAndDestroy(GameObjectsScript.lastDragged, 0.5f));
                 GameObjectsScript.lastDragged = null;
                 GameObjectsScript.isDragging = false;
             }
@@ -136,7 +137,7 @@ public class FlyingObjectControllerScript : MonoBehaviour
         Quaternion orginamRotation = obj.transform.rotation;
         float time = 0f;
 
-        while (time < duration)
+        while (time < duration && obj != null)
         {
             time += Time.deltaTime;
             obj.transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, time / duration);
@@ -145,7 +146,13 @@ public class FlyingObjectControllerScript : MonoBehaviour
 
             yield return null;
         }
-        Destroy(obj);
+
+        // Atņemam sirsniņu
+        if (gameObjectsScript != null)
+            gameObjectsScript.NotifyCarDestroyed();
+
+        if (obj != null)
+            Destroy(obj);
     }
 
     public void TriggerExplosion()

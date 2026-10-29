@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
@@ -80,6 +80,22 @@ public class ObjectTransformationScript : MonoBehaviour
         rotateCW = rotateCCW = false;
         scaleUpY = scaleDownY = scaleUpX = scaleDownX = false;
         isTransforming = false;
+    }
+
+    // Pogai (Button -> On Click): apgriež pēdējo vilkto mašīnu uz otru pusi
+    public void FlipX()
+    {
+        GameObject obj = GameObjectsScript.lastDragged;
+        if (obj == null)
+            return;
+
+        RectTransform rc = obj.GetComponent<RectTransform>();
+        if (rc == null)
+            return;
+
+        Vector3 s = rc.localScale;
+        s.x = -s.x;
+        rc.localScale = s;
     }
 
     public void StartRotateCW(BaseEventData eventData) { rotateCW = true; }

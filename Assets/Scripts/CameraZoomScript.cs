@@ -55,6 +55,13 @@ public class CameraZoomScript : MonoBehaviour
             return;
         }
 
+        // Kamēr velk mašīnu, kamera nekustas ar to pašu pirkstu
+        if (GameObjectsScript.isDragging && Input.touchCount > 0)
+        {
+            isTouchPan = false;
+            panFingerId = -1;
+        }
+
 
 #if UNITY_EDITOR || UNITY_STANDALONE
         DesktopFollowCursor();
@@ -86,6 +93,14 @@ public class CameraZoomScript : MonoBehaviour
         if (IsTouchUIButton(touch.position))
             return;
 
+        // Pirksts uz mašīnas vai mašīna tiek vilkta - kameru nebīdām
+        if (GameObjectsScript.isDragging)
+        {
+            isTouchPan = false;
+            panFingerId = -1;
+            return;
+        }
+
         if (touch.phase == TouchPhase.Began)
         {
             float dt = Time.time - lastTapTime;
@@ -101,6 +116,14 @@ public class CameraZoomScript : MonoBehaviour
             }
 
             lastTouchPos = touch.position;
+
+            if (IsTouchOverDraggable(touch.position))
+            {
+                isTouchPan = false;
+                panFingerId = -1;
+                return;
+            }
+
             panFingerId = touch.fingerId;
             isTouchPan = true;
 
@@ -162,6 +185,27 @@ public class CameraZoomScript : MonoBehaviour
         foreach (RaycastResult result in results)
         {
             if (result.gameObject.GetComponent<UnityEngine.UI.Button>() != null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool IsTouchOverDraggable(Vector2 touchPosition)
+    {
+        if (EventSystem.current == null)
+            return false;
+
+        PointerEventData pointerData = new PointerEventData(EventSystem.current);
+        pointerData.position = touchPosition;
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        foreach (RaycastResult result in results)
+        {
+            if (result.gameObject.GetComponentInParent<DragAndDropScript>() != null)
             {
                 return true;
             }

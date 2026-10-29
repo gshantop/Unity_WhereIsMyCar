@@ -7,10 +7,13 @@ public class DragAndDropScript : MonoBehaviour,
     public GameObjectsScript gameObjectsScript;
     private CanvasGroup canvasGroup;
     public ScreenBoundariesScript screenBoundariesScript;
-
     private Vector3 dragOffsetWorld;
     private Camera mainCamera;
     private Canvas canvas;
+
+    // Vilkšanas stāvoklis un pēdējā pirksta/kursora pozīcija ekrānā
+    private bool dragging = false;
+    private Vector2 lastPointerScreenPos;
 
     void Awake()
     {
@@ -34,44 +37,79 @@ public class DragAndDropScript : MonoBehaviour,
         if (canvas != null)
         {
             mainCamera = canvas.worldCamera;
-
         }
         else
             Debug.LogWarning("Canvas not found in parent hierarchy of " + gameObject.name);
-    }
 
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+    }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         Debug.Log("Clicked on " + gameObject.name);
-
         if (gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
         {
             gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[0]);
         }
     }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         Debug.Log("Start drag!");
         GameObjectsScript.isDragging = true;
+        dragging = true;
+        lastPointerScreenPos = eventData.position;
+
         canvasGroup.alpha = 0.6f;
         canvasGroup.blocksRaycasts = false;
+
         int lastIndex = transform.parent.childCount - 1;
         int positionIndex = Mathf.Max(0, lastIndex - 1);
         transform.SetSiblingIndex(positionIndex);
 
         Vector3 cursorWorldPos;
-
         if (ScreenToWorldPoint(eventData.position, out cursorWorldPos))
         {
             dragOffsetWorld = transform.position - cursorWorldPos;
-
+            dragOffsetWorld.z = 0f;
         }
         else
         {
             dragOffsetWorld = Vector3.zero;
         }
+
         GameObjectsScript.lastDragged = eventData.pointerDrag;
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        lastPointerScreenPos = eventData.position;
+        FollowPointer();
+    }
+
+    // Katru kadru (arī tad, kad kamera kustas, bet kursors stāv) mašīna paliek zem kursora
+    void LateUpdate()
+    {
+        if (dragging && GameObjectsScript.isDragging)
+        {
+            FollowPointer();
+        }
+    }
+
+    void FollowPointer()
+    {
+        Vector3 pointerWorld;
+        if (!ScreenToWorldPoint(lastPointerScreenPos, out pointerWorld))
+        {
+            return;
+        }
+
+        Vector3 desired = pointerWorld + dragOffsetWorld;
+        desired.z = transform.position.z;
+
+        Vector2 clamped = screenBoundariesScript.GetClampedPosition(desired);
+        transform.position = new Vector3(clamped.x, clamped.y, desired.z);
     }
 
     private bool ScreenToWorldPoint(Vector2 screenPosition, out Vector3 worldPosition)
@@ -89,41 +127,31 @@ public class DragAndDropScript : MonoBehaviour,
         return true;
     }
 
-    public void OnDrag(PointerEventData eventData)
-    {
-
-        Vector3 pointerWorld;
-        if (!ScreenToWorldPoint(eventData.position, out pointerWorld))
-        {
-            return;
-        }
-        Vector3 desired = pointerWorld + dragOffsetWorld;
-        desired.z = transform.position.z;
-
-        screenBoundariesScript.RecalculateBounds();
-        Vector2 clamped = screenBoundariesScript.GetClampedPosition(desired);
-
-        transform.position = new Vector3(clamped.x, clamped.y, desired.z);
-    }
-
     public void OnEndDrag(PointerEventData eventData)
     {
+        dragging = false;
+        GameObjectsScript.isDragging = false;
+        Debug.Log("OnEndDrag called for " + gameObject.name);
 
         if (gameObjectsScript.carSoundSource != null && gameObjectsScript.sounds != null)
         {
             gameObjectsScript.carSoundSource.PlayOneShot(gameObjectsScript.sounds[0]);
-            GameObjectsScript.isDragging = false;
-            Debug.Log("OnEndDrag called for " + gameObject.name);
-            canvasGroup.alpha = 1f;
-            canvasGroup.blocksRaycasts = true;
-
-            if (gameObjectsScript.inRightPlace)
-            {
-                canvasGroup.blocksRaycasts = false;
-                GameObjectsScript.lastDragged = null;
-            }
-
-            gameObjectsScript.inRightPlace = false;
         }
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+
+        if (gameObjectsScript.inRightPlace)
+        {
+            canvasGroup.blocksRaycasts = false;
+            GameObjectsScript.lastDragged = null;
+        }
+
+        gameObjectsScript.inRightPlace = false;
+    }
+
+    void OnDisable()
+    {
+        dragging = false;
     }
 }
