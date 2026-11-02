@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -7,6 +7,7 @@ public class AdManager : MonoBehaviour
     public AdsInitializer adsInitializer;
     public InterstitialAd interstitialAd;
     [SerializeField] bool turnOffInterstitialAds = false;
+    [SerializeField] bool showInterstitialOnStart = true;
     private bool firstAdShown = false;
 
     public RewardedAds rewardedAds;
@@ -17,16 +18,8 @@ public class AdManager : MonoBehaviour
 
     public static AdManager Instance { get; private set; }
 
-    private bool firstSceneLoaded = false;
-
-
     private void Awake()
     {
-        if (adsInitializer == null)
-        {
-            adsInitializer = FindFirstObjectByType<AdsInitializer>();
-        }
-
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -34,37 +27,68 @@ public class AdManager : MonoBehaviour
         }
 
         Instance = this;
+
+        // DontDestroyOnLoad strādā tikai saknes objektiem
+        if (transform.parent != null)
+            transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
-        adsInitializer.OnAdsInitialized += HandleAdsInitialized;
+
+        FindComponents();
+
+        if (adsInitializer != null)
+        {
+            adsInitializer.OnAdsInitialized += HandleAdsInitialized;
+            if (adsInitializer.IsInitialized)
+                HandleAdsInitialized();
+        }
+        else
+        {
+            Debug.LogWarning("AdManager: AdsInitializer nav atrasts!");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+
+        if (adsInitializer != null)
+            adsInitializer.OnAdsInitialized -= HandleAdsInitialized;
+        if (interstitialAd != null)
+            interstitialAd.OnInterstitialAdReady -= HandleInterstitialReady;
+    }
+
+    private void FindComponents()
+    {
+        if (adsInitializer == null) adsInitializer = FindFirstObjectByType<AdsInitializer>();
+        if (interstitialAd == null) interstitialAd = FindFirstObjectByType<InterstitialAd>();
+        if (rewardedAds == null) rewardedAds = FindFirstObjectByType<RewardedAds>();
+        if (bannerAd == null) bannerAd = FindFirstObjectByType<BannerAd>();
     }
 
     private void HandleAdsInitialized()
     {
-        if (!turnOffInterstitialAds)
+        if (!turnOffInterstitialAds && interstitialAd != null)
         {
+            // Atrakstāmies pirms pierakstīšanās, lai nebūtu dubultu izsaukumu pēc ainas pārlādes
+            interstitialAd.OnInterstitialAdReady -= HandleInterstitialReady;
             interstitialAd.OnInterstitialAdReady += HandleInterstitialReady;
             interstitialAd.LoadAd();
         }
 
-        if (!turnOffRewardedAds)
-        {
+        if (!turnOffRewardedAds && rewardedAds != null)
             rewardedAds.LoadAd();
-        }
 
-        if (!turnOffBannerAds)
-        {
+        if (!turnOffBannerAds && bannerAd != null)
             bannerAd.LoadBanner();
-        }
     }
 
     private void HandleInterstitialReady()
     {
-        if (!firstAdShown)
+        if (showInterstitialOnStart && !firstAdShown && interstitialAd != null)
         {
             Debug.Log("Showing interstitial ad for the first time!");
-            interstitialAd.ShowAd();
             firstAdShown = true;
-
+            interstitialAd.ShowAd();
         }
         else
         {
@@ -84,42 +108,38 @@ public class AdManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (interstitialAd == null)
-            interstitialAd = FindFirstObjectByType<InterstitialAd>();
+        if (Instance != this) return;
 
-        Button interstitialButton =
-          GameObject.FindGameObjectWithTag("InterstitialAdButton").GetComponent<Button>();
+        FindComponents();
+
+        Button interstitialButton = FindButtonByTag("InterstitialAdButton");
         if (interstitialAd != null && interstitialButton != null)
-        {
             interstitialAd.SetButton(interstitialButton);
-        }
 
-        if (rewardedAds == null)
-            rewardedAds = FindFirstObjectByType<RewardedAds>();
-
-        Button rewardedAdButton =
-          GameObject.FindGameObjectWithTag("RewardedAdButton").GetComponent<Button>();
+        Button rewardedAdButton = FindButtonByTag("RewardedAdButton");
         if (rewardedAds != null && rewardedAdButton != null)
-        {
             rewardedAds.SetButton(rewardedAdButton);
-        }
 
-        Button bannerAdButton =
-         GameObject.FindGameObjectWithTag("BannerAdButton").GetComponent<Button>();
+        Button bannerAdButton = FindButtonByTag("BannerAdButton");
         if (bannerAd != null && bannerAdButton != null)
-        {
             bannerAd.SetButton(bannerAdButton);
-        }
 
-        if (!firstSceneLoaded)
-        {
-            firstSceneLoaded = true;
-            Debug.Log("First scene loaded!");
-            return;
-        }
-
-        Debug.Log("Scene relodaded!");
-        HandleAdsInitialized();
+        if (adsInitializer != null && adsInitializer.IsInitialized)
+            HandleAdsInitialized();
     }
 
+    // Droša meklēšana: ja tags nav izveidots vai objekta nav - atgriež null, nevis kļūdu
+    private Button FindButtonByTag(string tag)
+    {
+        try
+        {
+            GameObject go = GameObject.FindGameObjectWithTag(tag);
+            return go != null ? go.GetComponent<Button>() : null;
+        }
+        catch (UnityException)
+        {
+            Debug.LogWarning($"AdManager: tags \"{tag}\" nav izveidots (Tags & Layers).");
+            return null;
+        }
+    }
 }

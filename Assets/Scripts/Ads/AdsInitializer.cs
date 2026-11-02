@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.Advertisements;
 
@@ -8,6 +8,8 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
     [SerializeField] bool _testMode = true;
     private string _gameId;
     public event Action OnAdsInitialized;
+
+    public bool IsInitialized => Advertisement.isInitialized;
 
     void Awake()
     {
@@ -19,6 +21,12 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
 #if UNITY_ANDROID || UNITY_EDITOR
         _gameId = _androidGameId;
 #endif
+
+        if (string.IsNullOrEmpty(_gameId))
+        {
+            Debug.LogWarning("AdsInitializer: Game ID nav norādīts!");
+            return;
+        }
 
         if (!Advertisement.isInitialized && Advertisement.isSupported)
         {
@@ -34,6 +42,6 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
 
     public void OnInitializationFailed(UnityAdsInitializationError error, string message)
     {
-        Debug.LogError($"Unity Ads Initialization Failed: {error.ToString()} - {message}");
+        Debug.LogError($"Unity Ads Initialization Failed: {error} - {message}");
     }
 }

@@ -1,16 +1,22 @@
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.Advertisements;
 using UnityEngine.UI;
 
 public class BannerAd : MonoBehaviour
 {
-    [SerializeField] string _AndroidAdUnitId = "Banner_Android";
+    [SerializeField] string _AndroidAdUnitId = "BP_Banner_Android";
     string _adUnitId;
 
     [SerializeField] Button _bannerButton;
     public bool isBannerVisible = false;
 
     [SerializeField] BannerPosition bannerPosition = BannerPosition.BOTTOM_CENTER;
+
+    [SerializeField] float retryDelay = 10f;
+    [SerializeField] int maxRetries = 5;
+    private int retryCount = 0;
+    private bool isLoaded = false;
 
     void Awake()
     {
@@ -26,6 +32,12 @@ public class BannerAd : MonoBehaviour
             return;
         }
 
+        if (isLoaded)
+        {
+            SetButtonInteractable(true);
+            return;
+        }
+
         BannerLoadOptions bannerOptions = new BannerLoadOptions
         {
             loadCallback = OnBannerLoaded,
@@ -38,30 +50,48 @@ public class BannerAd : MonoBehaviour
     void OnBannerLoaded()
     {
         Debug.Log("Banner ad loaded!");
-        _bannerButton.interactable = true;
+        isLoaded = true;
+        retryCount = 0;
+        SetButtonInteractable(true);
     }
 
+    // Bez tūlītējas atkārtotas ielādes - tikai ar aizturi un limitu
     void OnBannerError(string message)
     {
         Debug.Log($"Banner error: {message}");
+        isLoaded = false;
+
+        if (retryCount >= maxRetries)
+        {
+            Debug.LogWarning("Banner: sasniegts mēģinājumu limits, vairs nelādējam.");
+            return;
+        }
+
+        retryCount++;
+        StartCoroutine(RetryAfterDelay());
+    }
+
+    IEnumerator RetryAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(retryDelay);
         LoadBanner();
     }
 
     public void ShowBannerAd()
     {
         if (isBannerVisible)
-            HideBannerAd();
-
-        else
         {
-            BannerOptions bannerOptions = new BannerOptions
-            {
-                clickCallback = OnBannerClicked,
-                hideCallback = OnBannerHidden,
-                showCallback = OnBannerShown
-            };
-            Advertisement.Banner.Show(_adUnitId, bannerOptions);
+            HideBannerAd();
+            return;
         }
+
+        BannerOptions bannerOptions = new BannerOptions
+        {
+            clickCallback = OnBannerClicked,
+            hideCallback = OnBannerHidden,
+            showCallback = OnBannerShown
+        };
+        Advertisement.Banner.Show(_adUnitId, bannerOptions);
     }
 
     void OnBannerClicked()
@@ -71,21 +101,27 @@ public class BannerAd : MonoBehaviour
 
     void OnBannerHidden()
     {
-        Debug.Log("Banner ad is hiden! " + _adUnitId);
+        Debug.Log("Banner ad is hidden! " + _adUnitId);
         isBannerVisible = false;
     }
+
     void OnBannerShown()
     {
         Debug.Log("Banner ad is visible! " + _adUnitId);
         isBannerVisible = true;
     }
 
-
     public void HideBannerAd()
     {
         Advertisement.Banner.Hide();
+        isBannerVisible = false;
     }
 
+    private void SetButtonInteractable(bool value)
+    {
+        if (_bannerButton != null)
+            _bannerButton.interactable = value;
+    }
 
     public void SetButton(Button button)
     {
@@ -95,6 +131,6 @@ public class BannerAd : MonoBehaviour
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(ShowBannerAd);
         _bannerButton = button;
-        _bannerButton.interactable = false;
+        _bannerButton.interactable = isLoaded;
     }
 }
