@@ -529,6 +529,11 @@ MonoBehaviour:
   turnOffRewardedAds: 0
   bannerAd: {fileID: 0}
   turnOffBannerAds: 0
+  interstitialButtonName: InterstitialAd
+  rewardedButtonNames:
+  - RewardedAd
+  - RewardedAdButton
+  bannerButtonName: BannerAd
 --- !u!114 &160426337
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4201,7 +4206,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 221.49998, y: 378.02002}
+  m_AnchoredPosition: {x: 940, y: 262}
   m_SizeDelta: {x: 267.9941, y: 334.04}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1282065400
@@ -5497,7 +5502,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: -48.500854, w: 0}
+  m_margin: {x: 0, y: 0, z: -48.500854, w: -2.5224514}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -5527,7 +5532,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 225.04, y: 485}
+  m_AnchoredPosition: {x: 943.54004, y: 368.97998}
   m_SizeDelta: {x: 216.0786, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1784616381
@@ -7467,7 +7472,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 8, y: 446}
+  m_AnchoredPosition: {x: -403, y: -33}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &1966829780731727024
@@ -8908,7 +8913,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -266.93298}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -131, y: -472}
+  m_AnchoredPosition: {x: -131, y: -450}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &6859046047128533751
@@ -9270,7 +9275,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -151, y: -483}
+  m_AnchoredPosition: {x: -1040, y: -299}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &8003649343334551470
@@ -9522,7 +9527,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -16, y: 429}
+  m_AnchoredPosition: {x: -870, y: -331}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &8673970130185611747

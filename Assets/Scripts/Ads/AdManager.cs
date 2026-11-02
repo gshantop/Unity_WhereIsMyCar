@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class AdManager : MonoBehaviour
 {
@@ -16,11 +18,20 @@ public class AdManager : MonoBehaviour
     public RewardedAds rewardedAds;
     [SerializeField] bool turnOffRewardedAds = false;
 
-    [Header("Banera reklāma")]
+    [Header("Banera reklāma (nepārtraukti, fiksētā pozīcijā)")]
     public BannerAd bannerAd;
     [SerializeField] bool turnOffBannerAds = false;
 
+    [Header("Reklāmas pogu nosaukumi ainā")]
+    [SerializeField] string interstitialButtonName = "InterstitialAd";
+    [SerializeField] string[] rewardedButtonNames = { "RewardedAd", "RewardedAdButton" };
+    [SerializeField] string bannerButtonName = "BannerAd";
+
     public static AdManager Instance { get; private set; }
+
+    private readonly List<RaycastResult> raycastResults = new List<RaycastResult>();
+    private PointerEventData pointerData;
+    private int[] lastTouchIds;
 
     private bool isChangingScene = false;
     private float lastInterstitialTime = -9999f;
@@ -36,6 +47,7 @@ public class AdManager : MonoBehaviour
         go.AddComponent<AdsInitializer>();
         go.AddComponent<InterstitialAd>();
         go.AddComponent<RewardedAds>();
+        go.AddComponent<BannerAd>();
         go.AddComponent<AdManager>();
     }
 
@@ -86,6 +98,8 @@ public class AdManager : MonoBehaviour
             rewardedAds = gameObject.AddComponent<RewardedAds>();
 
         if (bannerAd == null) bannerAd = GetComponent<BannerAd>();
+        if (bannerAd == null && !turnOffBannerAds)
+            bannerAd = gameObject.AddComponent<BannerAd>();
     }
 
     private void HandleAdsInitialized()
@@ -163,37 +177,84 @@ public class AdManager : MonoBehaviour
     {
         if (Instance != this) return;
 
-        if (bannerAd == null) bannerAd = FindFirstObjectByType<BannerAd>();
-
-        Button rewardedAdButton = FindButton("RewardedAdButton");
-        if (rewardedAds != null && rewardedAdButton != null)
-            rewardedAds.SetButton(rewardedAdButton);
-
-        Button bannerAdButton = FindButton("BannerAdButton");
-        if (bannerAd != null && bannerAdButton != null)
-            bannerAd.SetButton(bannerAdButton);
-
         if (adsInitializer != null && adsInitializer.IsInitialized)
             HandleAdsInitialized();
     }
 
-    // Meklē pogu pēc taga, ja tāda taga nav - pēc objekta nosaukuma
-    private Button FindButton(string key)
+    // ===== Reklāmas pogas =====
+    // Pogas nosakām paši (pēc pieskāriena sākuma un nosaukuma), jo telefonā
+    // Button On Click ātrus pieskārienus mēdz nepamanīt
+
+    private void Update()
     {
-        GameObject go = null;
+        if (Instance != this || EventSystem.current == null)
+            return;
 
-        try
+        if (Touchscreen.current != null)
         {
-            go = GameObject.FindGameObjectWithTag(key);
+            var touches = Touchscreen.current.touches;
+            if (lastTouchIds == null || lastTouchIds.Length != touches.Count)
+                lastTouchIds = new int[touches.Count];
+
+            for (int i = 0; i < touches.Count; i++)
+            {
+                int id = touches[i].touchId.ReadValue();
+                if (id != 0 && id != lastTouchIds[i])
+                {
+                    lastTouchIds[i] = id;
+                    HandleTap(touches[i].startPosition.ReadValue());
+                }
+            }
         }
-        catch (UnityException)
+
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            HandleTap(Mouse.current.position.ReadValue());
+    }
+
+    private void HandleTap(Vector2 screenPos)
+    {
+        string name = GetUIButtonName(screenPos);
+        if (name == null)
+            return;
+
+        if (name == interstitialButtonName)
         {
-            // Tags nav izveidots - meklējam pēc nosaukuma
+            if (!turnOffInterstitialAds && interstitialAd != null)
+                interstitialAd.ShowManually();
         }
+        else if (System.Array.IndexOf(rewardedButtonNames, name) >= 0)
+        {
+            if (!turnOffRewardedAds && rewardedAds != null)
+                rewardedAds.ShowAd();
+        }
+        else if (name == bannerButtonName)
+        {
+            if (!turnOffBannerAds && bannerAd != null)
+                bannerAd.ToggleBanner();
+        }
+    }
 
-        if (go == null)
-            go = GameObject.Find(key);
+    // Augšējā UI elementa (vai tā vecāka) nosaukums, ja tā ir viena no reklāmas pogām
+    private string GetUIButtonName(Vector2 screenPos)
+    {
+        if (pointerData == null)
+            pointerData = new PointerEventData(EventSystem.current);
 
-        return go != null ? go.GetComponent<Button>() : null;
+        pointerData.position = screenPos;
+        raycastResults.Clear();
+        EventSystem.current.RaycastAll(pointerData, raycastResults);
+
+        if (raycastResults.Count == 0)
+            return null;
+
+        Transform t = raycastResults[0].gameObject.transform;
+        for (int i = 0; i < 2 && t != null; i++, t = t.parent)
+        {
+            string n = t.name;
+            if (n == interstitialButtonName || n == bannerButtonName ||
+                System.Array.IndexOf(rewardedButtonNames, n) >= 0)
+                return n;
+        }
+        return null;
     }
 }

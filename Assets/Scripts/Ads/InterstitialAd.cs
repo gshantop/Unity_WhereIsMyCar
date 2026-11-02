@@ -20,15 +20,31 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
     // Ko izsaukt, kad reklāma aizvērta (piem., ielādēt nākamo ainu)
     private Action onFinished;
 
+    // Poga nospiesta, kamēr reklāma vēl lādējās - parādīsim, tiklīdz ielādēsies
+    private bool pendingManualShow = false;
+
     void Awake()
     {
         _adUnitId = _androidAdUnitId;
     }
 
-    // Saderībai ar veco pogu ainā (ja tās On Click vēl norāda uz šo metodi)
+    // Poga "InterstitialAd": parāda reklāmu tūlīt vai uzreiz pēc ielādes
+    public void ShowManually()
+    {
+        if (isReady)
+        {
+            ShowAd(null);
+            return;
+        }
+
+        pendingManualShow = true;
+        retryCount = 0;
+        LoadAd();
+    }
+
     public void OnInterstitialAdButtonClicked()
     {
-        ShowAd(null);
+        ShowManually();
     }
 
     // Atgriež true, ja reklāma sāk rādīties
@@ -105,6 +121,12 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         isLoading = false;
         isReady = true;
         retryCount = 0;
+
+        if (pendingManualShow)
+        {
+            pendingManualShow = false;
+            ShowAd(null);
+        }
     }
 
     public void OnUnityAdsFailedToLoad(string placementId, UnityAdsLoadError error, string message)
