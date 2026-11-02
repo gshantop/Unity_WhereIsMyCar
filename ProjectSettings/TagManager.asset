@@ -18,6 +18,7 @@ TagManager:
   - e61
   - Eskavators
   - InterstitialAdButton
+  - RewardedAdButton
   layers:
   - Default
   - TransparentFX

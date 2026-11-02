@@ -2,19 +2,13 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Advertisements;
-using UnityEngine.UI;
 
+// Pilnekrāna reklāma. Rāda AdManager ainu maiņas brīdī (AdManager.LoadScene).
 public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowListener
 {
     [SerializeField] string _androidAdUnitId = "BP_Interstitial_Android";
     string _adUnitId;
-    public event Action OnInterstitialAdReady;
     public bool isReady = false;
-    [SerializeField] Button _interstitialAdButton;
-
-    // false = poga vienmēr spiežama; ja reklāma vēl nav ielādēta, tā tiks parādīta, tiklīdz ielādēsies
-    [SerializeField] bool disableButtonUntilReady = false;
-    private bool pendingShow = false;
 
     [Header("Atkārtota ielāde kļūdas gadījumā")]
     [SerializeField] float retryDelay = 10f;
@@ -23,49 +17,27 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
     private bool isLoading = false;
     private Coroutine retryRoutine;
 
-    [Header("Bonuss pēc reklāmas")]
-    [SerializeField] float slowTimeScale = 0.3f;
-    [SerializeField] float slowDuration = 30f;
+    // Ko izsaukt, kad reklāma aizvērta (piem., ielādēt nākamo ainu)
+    private Action onFinished;
 
     void Awake()
     {
         _adUnitId = _androidAdUnitId;
     }
 
-    private void Update()
-    {
-        if (_interstitialAdButton != null)
-            _interstitialAdButton.interactable = !disableButtonUntilReady || isReady;
-    }
-
+    // Saderībai ar veco pogu ainā (ja tās On Click vēl norāda uz šo metodi)
     public void OnInterstitialAdButtonClicked()
     {
-        Debug.Log("Interstitial Ad Button Clicked");
-        ShowInterstitial();
+        ShowAd(null);
     }
 
-    public void ShowInterstitial()
+    // Atgriež true, ja reklāma sāk rādīties
+    public bool ShowAd(Action onFinished)
     {
-        if (isReady)
-        {
-            Debug.Log("Showing interstitial ad manually!");
-            ShowAd();
-        }
-        else
-        {
-            Debug.LogWarning("Interstitial ad is not ready yet, loading - will show when loaded!");
-            pendingShow = true;
-            retryCount = 0;
-            LoadAd();
-        }
-    }
-
-    public void ShowAd()
-    {
-        if (!isReady)
+        if (!isReady || !Advertisement.isInitialized)
         {
             Debug.LogWarning("Interstitial ad is not ready yet!");
-            return;
+            return false;
         }
 
         if (AdManager.Instance != null && AdManager.Instance.bannerAd != null &&
@@ -74,8 +46,10 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
             AdManager.Instance.bannerAd.HideBannerAd();
         }
 
+        this.onFinished = onFinished;
         isReady = false;
         Advertisement.Show(_adUnitId, this);
+        return true;
     }
 
     public void LoadAd()
@@ -94,7 +68,7 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         Advertisement.Load(_adUnitId, this);
     }
 
-    // Nekad neielādējam uzreiz atkārtoti - tas var radīt bezgalīgu ciklu un "uzkārt" Unity
+    // Nekad neielādējam uzreiz atkārtoti - tas var radīt bezgalīgu ciklu
     private void ScheduleRetry()
     {
         if (retryCount >= maxRetries)
@@ -116,6 +90,13 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         LoadAd();
     }
 
+    private void Finish()
+    {
+        Action callback = onFinished;
+        onFinished = null;
+        callback?.Invoke();
+    }
+
     public void OnUnityAdsAdLoaded(string placementId)
     {
         if (placementId != _adUnitId) return;
@@ -124,13 +105,6 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         isLoading = false;
         isReady = true;
         retryCount = 0;
-        OnInterstitialAdReady?.Invoke();
-
-        if (pendingShow)
-        {
-            pendingShow = false;
-            ShowAd();
-        }
     }
 
     public void OnUnityAdsFailedToLoad(string placementId, UnityAdsLoadError error, string message)
@@ -154,20 +128,11 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
 
     public void OnUnityAdsShowComplete(string placementId, UnityAdsShowCompletionState showCompletionState)
     {
-        if (showCompletionState == UnityAdsShowCompletionState.COMPLETED)
-        {
-            Debug.Log("Interstitial ad completed successfully!");
-            if (!GameManagerScript.GameOver)
-                StartCoroutine(SlowDownTimeTemporarily(slowDuration));
-        }
-        else
-        {
-            Debug.LogWarning($"Interstitial ad was not completed: {showCompletionState}");
-            RestoreTime();
-        }
-
+        Debug.Log($"Interstitial ad closed: {showCompletionState}");
+        RestoreTime();
         retryCount = 0;
         LoadAd();
+        Finish();
     }
 
     public void OnUnityAdsShowFailure(string placementId, UnityAdsShowError error, string message)
@@ -175,15 +140,7 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
         Debug.LogError($"Failed to show interstitial ad: {error} - {message}");
         RestoreTime();
         ScheduleRetry();
-    }
-
-    private IEnumerator SlowDownTimeTemporarily(float duration)
-    {
-        Time.timeScale = slowTimeScale;
-        Debug.Log("Time slowed down for " + duration + " seconds.");
-        yield return new WaitForSecondsRealtime(duration);
-        RestoreTime();
-        Debug.Log("Time restored to normal.");
+        Finish();
     }
 
     // Neatsaldējam spēli, ja tā jau beigusies (uzvaras/zaudējuma logs)
@@ -191,16 +148,5 @@ public class InterstitialAd : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsSho
     {
         if (!GameManagerScript.GameOver)
             Time.timeScale = 1f;
-    }
-
-    public void SetButton(Button button)
-    {
-        if (button == null)
-            return;
-
-        button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(OnInterstitialAdButtonClicked);
-        _interstitialAdButton = button;
-        _interstitialAdButton.interactable = !disableButtonUntilReady || isReady;
     }
 }

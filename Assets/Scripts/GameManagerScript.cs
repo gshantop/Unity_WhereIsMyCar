@@ -229,15 +229,14 @@ public class GameManagerScript : MonoBehaviour
         }
     }
 
+    // Ainas maiņa caur AdManager - pirms tās tiek parādīta pilnekrāna reklāma
     public void RestartGame()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        AdManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void GoToMenu()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(0);
+        AdManager.LoadScene(0);
     }
 }

@@ -524,7 +524,7 @@ MonoBehaviour:
   adsInitializer: {fileID: 0}
   interstitialAd: {fileID: 0}
   turnOffInterstitialAds: 0
-  showInterstitialOnStart: 1
+  minSecondsBetweenInterstitials: 0
   rewardedAds: {fileID: 0}
   turnOffRewardedAds: 0
   bannerAd: {fileID: 0}
@@ -543,12 +543,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _androidAdUnitId: BP_Interstitial_Android
   isReady: 0
-  _interstitialAdButton: {fileID: 0}
-  disableButtonUntilReady: 0
   retryDelay: 10
   maxRetries: 5
-  slowTimeScale: 0.3
-  slowDuration: 30
 --- !u!1 &250844618
 GameObject:
   m_ObjectHideFlags: 0
@@ -859,7 +855,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -843, y: 513.5}
+  m_AnchoredPosition: {x: -791.57, y: 513.5}
   m_SizeDelta: {x: 160, y: 35}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &260681807
@@ -970,7 +966,7 @@ GameObject:
   - component: {fileID: 264849010}
   m_Layer: 5
   m_Name: RewardedAd
-  m_TagString: Untagged
+  m_TagString: RewardedAdButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1535,6 +1531,13 @@ MonoBehaviour:
   scaleSpeed: 0.5
   minFactor: 0.5
   maxFactor: 1.5
+  rotateCWButton: Clokwise
+  rotateCCWButton: Clokwise (1)
+  scaleUpYButton: xUp
+  scaleDownYButton: yUp
+  scaleUpXButton: xDown
+  scaleDownXButton: yDown
+  flipButton: Button (Legacy)
 --- !u!114 &449420545
 MonoBehaviour:
   m_ObjectHideFlags: 0

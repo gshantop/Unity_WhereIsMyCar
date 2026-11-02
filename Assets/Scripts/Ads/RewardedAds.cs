@@ -3,23 +3,39 @@ using UnityEngine;
 using UnityEngine.Advertisements;
 using UnityEngine.UI;
 
+// Apbalvojošā reklāma: lietotājs pats izvēlas to skatīties (poga),
+// bonuss - visi lidojošie objekti (lidmašīnas, mākoņi, bumbas) tiek iznīcināti.
 public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowListener
 {
     [SerializeField] string _androidAdUnitId = "BP_Rewarded_Android";
     string _adUnitId;
 
     [SerializeField] Button _rewardedAdButton;
-    public FlyingObjectManager flyingObjectManager;
 
     [SerializeField] float retryDelay = 10f;
     [SerializeField] int maxRetries = 5;
     private int retryCount = 0;
     private bool isLoading = false;
     private bool isReady = false;
+    private bool isShowing = false;
+    private bool pendingShow = false;
 
     void Awake()
     {
         _adUnitId = _androidAdUnitId;
+    }
+
+    void Start()
+    {
+        if (_rewardedAdButton != null)
+            SetButton(_rewardedAdButton);
+    }
+
+    void Update()
+    {
+        // Pogu nevar spiest, kamēr reklāma rādās vai spēle beigusies
+        if (_rewardedAdButton != null)
+            _rewardedAdButton.interactable = !isShowing && !GameManagerScript.GameOver;
     }
 
     public void LoadAd()
@@ -46,14 +62,26 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
         isLoading = false;
         isReady = true;
         retryCount = 0;
-        SetButtonInteractable(true);
+
+        // Lietotājs jau nospieda pogu, kamēr reklāma lādējās
+        if (pendingShow)
+        {
+            pendingShow = false;
+            ShowAd();
+        }
     }
 
+    // Pogas On Click
     public void ShowAd()
     {
+        if (isShowing || GameManagerScript.GameOver)
+            return;
+
         if (!isReady)
         {
-            Debug.LogWarning("Rewarded ad is not ready yet!");
+            Debug.Log("Rewarded ad not ready - loading, will show when loaded.");
+            pendingShow = true;
+            retryCount = 0;
             LoadAd();
             return;
         }
@@ -65,7 +93,7 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
         }
 
         isReady = false;
-        SetButtonInteractable(false);
+        isShowing = true;
         Advertisement.Show(_adUnitId, this);
     }
 
@@ -80,6 +108,7 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
     public void OnUnityAdsShowFailure(string placementId, UnityAdsShowError error, string message)
     {
         Debug.Log($"Error showing rewarded ad: {placementId} : {error} - {message}");
+        isShowing = false;
         RestoreTime();
         ScheduleRetry();
     }
@@ -97,21 +126,41 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
     public void OnUnityAdsShowComplete(string placementId,
         UnityAdsShowCompletionState showCompletionState)
     {
+        isShowing = false;
+        RestoreTime();
+
+        // Bonusu dodam tikai, ja reklāma noskatīta līdz galam
         if (placementId == _adUnitId &&
             showCompletionState == UnityAdsShowCompletionState.COMPLETED)
         {
-            Debug.Log("Rewarded ad completed!");
-
-            // Meklējam katru reizi, jo pēc ainas pārlādes vecais objekts ir iznīcināts
-            if (flyingObjectManager == null)
-                flyingObjectManager = FindFirstObjectByType<FlyingObjectManager>();
-            if (flyingObjectManager != null)
-                flyingObjectManager.DestroyAllFlyingObjects();
+            Debug.Log("Rewarded ad completed - giving reward!");
+            GiveReward();
         }
 
-        RestoreTime();
         retryCount = 0;
-        StartCoroutine(WaitAndLoadAd(retryDelay));
+        LoadAd();
+    }
+
+    // Bonuss: iznīcina visus lidojošos objektus ainā
+    private void GiveReward()
+    {
+        if (GameManagerScript.GameOver)
+            return;
+
+        FlyingObjectControllerScript[] flyingObjects =
+            FindObjectsByType<FlyingObjectControllerScript>(
+                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        foreach (FlyingObjectControllerScript obj in flyingObjects)
+        {
+            if (obj == null)
+                continue;
+
+            if (obj.CompareTag("Bomb"))
+                obj.TriggerExplosion();
+            else
+                obj.StartAndDestroy(Color.gray);
+        }
     }
 
     private void ScheduleRetry()
@@ -138,12 +187,6 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
             Time.timeScale = 1f;
     }
 
-    private void SetButtonInteractable(bool value)
-    {
-        if (_rewardedAdButton != null)
-            _rewardedAdButton.interactable = value;
-    }
-
     public void SetButton(Button button)
     {
         if (button == null)
@@ -152,6 +195,5 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(ShowAd);
         _rewardedAdButton = button;
-        _rewardedAdButton.interactable = isReady;
     }
 }

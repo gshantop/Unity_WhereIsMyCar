@@ -5,18 +5,39 @@ using UnityEngine.UI;
 public class AdManager : MonoBehaviour
 {
     public AdsInitializer adsInitializer;
+
+    [Header("Pilnekrāna reklāma (ainu maiņas brīdī)")]
     public InterstitialAd interstitialAd;
     [SerializeField] bool turnOffInterstitialAds = false;
-    [SerializeField] bool showInterstitialOnStart = true;
-    private bool firstAdShown = false;
+    [Tooltip("Minimālais laiks starp pilnekrāna reklāmām sekundēs (0 = katrā ainu maiņā)")]
+    [SerializeField] float minSecondsBetweenInterstitials = 0f;
 
+    [Header("Apbalvojošā reklāma (pēc lietotāja izvēles)")]
     public RewardedAds rewardedAds;
     [SerializeField] bool turnOffRewardedAds = false;
 
+    [Header("Banera reklāma")]
     public BannerAd bannerAd;
     [SerializeField] bool turnOffBannerAds = false;
 
     public static AdManager Instance { get; private set; }
+
+    private bool isChangingScene = false;
+    private float lastInterstitialTime = -9999f;
+
+    // Ja nevienā ainā nav AdManager - izveidojam to automātiski,
+    // lai reklāma strādātu jau no StartScene
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void CreateIfMissing()
+    {
+        if (Instance != null) return;
+
+        GameObject go = new GameObject("AdManager (auto)");
+        go.AddComponent<AdsInitializer>();
+        go.AddComponent<InterstitialAd>();
+        go.AddComponent<RewardedAds>();
+        go.AddComponent<AdManager>();
+    }
 
     private void Awake()
     {
@@ -53,27 +74,24 @@ public class AdManager : MonoBehaviour
 
         if (adsInitializer != null)
             adsInitializer.OnAdsInitialized -= HandleAdsInitialized;
-        if (interstitialAd != null)
-            interstitialAd.OnInterstitialAdReady -= HandleInterstitialReady;
     }
 
     private void FindComponents()
     {
-        if (adsInitializer == null) adsInitializer = FindFirstObjectByType<AdsInitializer>();
-        if (interstitialAd == null) interstitialAd = FindFirstObjectByType<InterstitialAd>();
-        if (rewardedAds == null) rewardedAds = FindFirstObjectByType<RewardedAds>();
-        if (bannerAd == null) bannerAd = FindFirstObjectByType<BannerAd>();
+        if (adsInitializer == null) adsInitializer = GetComponent<AdsInitializer>();
+        if (interstitialAd == null) interstitialAd = GetComponent<InterstitialAd>();
+
+        if (rewardedAds == null) rewardedAds = GetComponent<RewardedAds>();
+        if (rewardedAds == null && !turnOffRewardedAds)
+            rewardedAds = gameObject.AddComponent<RewardedAds>();
+
+        if (bannerAd == null) bannerAd = GetComponent<BannerAd>();
     }
 
     private void HandleAdsInitialized()
     {
         if (!turnOffInterstitialAds && interstitialAd != null)
-        {
-            // Atrakstāmies pirms pierakstīšanās, lai nebūtu dubultu izsaukumu pēc ainas pārlādes
-            interstitialAd.OnInterstitialAdReady -= HandleInterstitialReady;
-            interstitialAd.OnInterstitialAdReady += HandleInterstitialReady;
             interstitialAd.LoadAd();
-        }
 
         if (!turnOffRewardedAds && rewardedAds != null)
             rewardedAds.LoadAd();
@@ -82,19 +100,54 @@ public class AdManager : MonoBehaviour
             bannerAd.LoadBanner();
     }
 
-    private void HandleInterstitialReady()
+    // ===== Ainu maiņa ar pilnekrāna reklāmu =====
+
+    // Visas ainu maiņas spēlē iet caur šo metodi
+    public static void LoadScene(int buildIndex)
     {
-        if (showInterstitialOnStart && !firstAdShown && interstitialAd != null)
+        if (Instance == null)
         {
-            Debug.Log("Showing interstitial ad for the first time!");
-            firstAdShown = true;
-            interstitialAd.ShowAd();
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(buildIndex);
+            return;
         }
-        else
-        {
-            Debug.Log("Interstitial ad is ready to be shown again!");
-        }
+
+        Instance.LoadSceneWithAd(buildIndex);
     }
+
+    private void LoadSceneWithAd(int buildIndex)
+    {
+        if (isChangingScene)
+            return;
+
+        bool cooldownPassed =
+            Time.unscaledTime - lastInterstitialTime >= minSecondsBetweenInterstitials;
+
+        if (!turnOffInterstitialAds && interstitialAd != null &&
+            interstitialAd.isReady && cooldownPassed)
+        {
+            isChangingScene = true;
+
+            // Aina tiek ielādēta tikai pēc tam, kad reklāma aizvērta
+            if (interstitialAd.ShowAd(() => FinishSceneChange(buildIndex)))
+            {
+                lastInterstitialTime = Time.unscaledTime;
+                return;
+            }
+        }
+
+        // Reklāma nav gatava - ainu mainām uzreiz, lietotājs negaida
+        FinishSceneChange(buildIndex);
+    }
+
+    private void FinishSceneChange(int buildIndex)
+    {
+        isChangingScene = false;
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(buildIndex);
+    }
+
+    // ===== Pogu pieslēgšana pēc ainas ielādes =====
 
     private void OnEnable()
     {
@@ -110,17 +163,13 @@ public class AdManager : MonoBehaviour
     {
         if (Instance != this) return;
 
-        FindComponents();
+        if (bannerAd == null) bannerAd = FindFirstObjectByType<BannerAd>();
 
-        Button interstitialButton = FindButtonByTag("InterstitialAdButton");
-        if (interstitialAd != null && interstitialButton != null)
-            interstitialAd.SetButton(interstitialButton);
-
-        Button rewardedAdButton = FindButtonByTag("RewardedAdButton");
+        Button rewardedAdButton = FindButton("RewardedAdButton");
         if (rewardedAds != null && rewardedAdButton != null)
             rewardedAds.SetButton(rewardedAdButton);
 
-        Button bannerAdButton = FindButtonByTag("BannerAdButton");
+        Button bannerAdButton = FindButton("BannerAdButton");
         if (bannerAd != null && bannerAdButton != null)
             bannerAd.SetButton(bannerAdButton);
 
@@ -128,18 +177,23 @@ public class AdManager : MonoBehaviour
             HandleAdsInitialized();
     }
 
-    // Droša meklēšana: ja tags nav izveidots vai objekta nav - atgriež null, nevis kļūdu
-    private Button FindButtonByTag(string tag)
+    // Meklē pogu pēc taga, ja tāda taga nav - pēc objekta nosaukuma
+    private Button FindButton(string key)
     {
+        GameObject go = null;
+
         try
         {
-            GameObject go = GameObject.FindGameObjectWithTag(tag);
-            return go != null ? go.GetComponent<Button>() : null;
+            go = GameObject.FindGameObjectWithTag(key);
         }
         catch (UnityException)
         {
-            Debug.LogWarning($"AdManager: tags \"{tag}\" nav izveidots (Tags & Layers).");
-            return null;
+            // Tags nav izveidots - meklējam pēc nosaukuma
         }
+
+        if (go == null)
+            go = GameObject.Find(key);
+
+        return go != null ? go.GetComponent<Button>() : null;
     }
 }

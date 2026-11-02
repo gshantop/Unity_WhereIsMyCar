@@ -4,10 +4,13 @@ using UnityEngine.Advertisements;
 
 public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
 {
-    [SerializeField] string _androidGameId;
+    [SerializeField] string _androidGameId = "800388732";
     [SerializeField] bool _testMode = true;
     private string _gameId;
     public event Action OnAdsInitialized;
+
+    // Lai inicializācija netiktu palaista divreiz (piem., ja ainā ir otrs AdScriptHolder)
+    private static bool initializationStarted = false;
 
     public bool IsInitialized => Advertisement.isInitialized;
 
@@ -28,10 +31,11 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
             return;
         }
 
-        if (!Advertisement.isInitialized && Advertisement.isSupported)
-        {
-            Advertisement.Initialize(_gameId, _testMode, this);
-        }
+        if (initializationStarted || Advertisement.isInitialized || !Advertisement.isSupported)
+            return;
+
+        initializationStarted = true;
+        Advertisement.Initialize(_gameId, _testMode, this);
     }
 
     public void OnInitializationComplete()
@@ -42,6 +46,7 @@ public class AdsInitializer : MonoBehaviour, IUnityAdsInitializationListener
 
     public void OnInitializationFailed(UnityAdsInitializationError error, string message)
     {
+        initializationStarted = false;
         Debug.LogError($"Unity Ads Initialization Failed: {error} - {message}");
     }
 }
