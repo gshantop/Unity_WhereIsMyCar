@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Advertisements;
 using UnityEngine.UI;
@@ -7,6 +8,9 @@ using UnityEngine.UI;
 // bonuss - visi lidojošie objekti (lidmašīnas, mākoņi, bumbas) tiek iznīcināti.
 public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowListener
 {
+    // Tiek izsaukts, kad reklāma noskatīta līdz galam (citas ainas var dot savu bonusu)
+    public static event Action OnRewardGranted;
+
     [SerializeField] string _androidAdUnitId = "BP_Rewarded_Android";
     string _adUnitId;
 
@@ -135,6 +139,7 @@ public class RewardedAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowLi
         {
             Debug.Log("Rewarded ad completed - giving reward!");
             GiveReward();
+            OnRewardGranted?.Invoke();
         }
 
         retryCount = 0;
