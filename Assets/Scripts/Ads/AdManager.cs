@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Advertisements;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -13,6 +15,8 @@ public class AdManager : MonoBehaviour
     [SerializeField] bool turnOffInterstitialAds = false;
     [Tooltip("Minimālais laiks starp pilnekrāna reklāmām sekundēs (0 = katrā ainu maiņā)")]
     [SerializeField] float minSecondsBetweenInterstitials = 0f;
+    [Tooltip("Cik sekundes gaidīt, ja reklāma vēl lādējas (piem., uzreiz pēc spēles palaišanas)")]
+    [SerializeField] float maxWaitForInterstitial = 4f;
 
     [Header("Apbalvojošā reklāma (pēc lietotāja izvēles)")]
     public RewardedAds rewardedAds;
@@ -134,23 +138,40 @@ public class AdManager : MonoBehaviour
         if (isChangingScene)
             return;
 
+        isChangingScene = true;
+        StartCoroutine(LoadSceneRoutine(buildIndex));
+    }
+
+    private IEnumerator LoadSceneRoutine(int buildIndex)
+    {
         bool cooldownPassed =
             Time.unscaledTime - lastInterstitialTime >= minSecondsBetweenInterstitials;
+        bool useAd = !turnOffInterstitialAds && interstitialAd != null && cooldownPassed;
 
-        if (!turnOffInterstitialAds && interstitialAd != null &&
-            interstitialAd.isReady && cooldownPassed)
+        // Ja reklāma vēl nav gatava (piem., spēle tikko palaista vai iepriekšējā tikko parādīta) -
+        // īsu brīdi pagaidām, lai tā tiktu parādīta katrā ainu maiņā, nevis "pa reizei"
+        if (useAd && !interstitialAd.isReady)
         {
-            isChangingScene = true;
-
-            // Aina tiek ielādēta tikai pēc tam, kad reklāma aizvērta
-            if (interstitialAd.ShowAd(() => FinishSceneChange(buildIndex)))
+            float waited = 0f;
+            while (waited < maxWaitForInterstitial && !interstitialAd.isReady)
             {
-                lastInterstitialTime = Time.unscaledTime;
-                return;
+                if (Advertisement.isInitialized)
+                    interstitialAd.LoadAd(); // nedara neko, ja jau lādējas
+
+                waited += Time.unscaledDeltaTime;
+                yield return null;
             }
         }
 
-        // Reklāma nav gatava - ainu mainām uzreiz, lietotājs negaida
+        if (useAd && interstitialAd.isReady &&
+            interstitialAd.ShowAd(() => FinishSceneChange(buildIndex)))
+        {
+            // Aina tiek ielādēta tikai pēc tam, kad reklāma aizvērta
+            lastInterstitialTime = Time.unscaledTime;
+            yield break;
+        }
+
+        // Reklāma tā arī neielādējās - ainu mainām bez tās
         FinishSceneChange(buildIndex);
     }
 

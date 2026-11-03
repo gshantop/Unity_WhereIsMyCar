@@ -20,38 +20,42 @@ public class HanoiGameManager : MonoBehaviour
     [Tooltip("Bloki. Ja tukšs - tiek atrasti visi Canvas objekti, kuru nosaukums sākas ar \"block\"")]
     public List<HanoiBlock> blocks = new List<HanoiBlock>();
 
-    [Tooltip("Cik bloku izmantot (mazākie). 0 = visus")]
-    public int blocksInGame = 0;
-
     [Header("Stieņu vietas fona bildē (0..1, no kreisās / no apakšas)")]
     public float[] pegU = { 249.5f / 1280f, 673.5f / 1280f, 1098.5f / 1280f };
     public float groundV = 46f / 600f;
     public float pegTopV = 497f / 600f;
+
+    [Header("Zvaigžņu laika sliekšņi (sekundēs) - kā mašīnu spēlē")]
+    public float threeStarTime = 90f;
+    public float twoStarTime = 180f;
 
     [Header("Kustība")]
     public float moveStepDuration = 0.15f;
     [Tooltip("Cik pikseļus jāpabīda pirksts, lai sāktos vilkšana")]
     public float dragThresholdPixels = 25f;
 
-    [Header("Teksti (nav obligāti)")]
+    [Header("Teksti (nav obligāti). Ja tukši - meklē pēc nosaukuma")]
+    [Tooltip("Ja tukšs - objekts \"Timer\" (kā CityScene)")]
     public TMP_Text timerText;
     public TMP_Text movesText;
-    public TMP_Text blockCountText;
 
     [Header("Pogas (On Click NEVAJAG - skripts pats nosaka pieskārienu)")]
     public RectTransform restartButton;
+    [Tooltip("Ja tukšs - objekts, kura nosaukums sākas ar \"MenuButton\" (ne uzvaras logā)")]
     public RectTransform menuButton;
-    public RectTransform fewerBlocksButton;
-    public RectTransform moreBlocksButton;
 
-    [Header("Uzvaras logs")]
+    [Header("Uzvaras logs (WinPanel no CityScene). Ja tukši - meklē pēc nosaukuma")]
+    [Tooltip("Ja tukšs - objekts \"WinPanel\"")]
     public GameObject winPanel;
-    public Image winImage;
-    [Tooltip("victory1, victory2, victory3 (1, 2, 3 zvaigznes)")]
-    public Sprite[] victorySprites = new Sprite[3];
-    public TMP_Text winTimeText;
+    [Tooltip("Ja tukšs - \"FinalTimeText\" WinPanel iekšā")]
+    public TMP_Text finalTimeText;
+    [Tooltip("Ja tukšs - \"star1\", \"star2\", \"star3\" WinPanel iekšā")]
+    public GameObject[] stars = new GameObject[3];
+    [Tooltip("Nav obligāts: teksts ar gājienu skaitu uzvaras logā")]
     public TMP_Text winMovesText;
+    [Tooltip("Ja tukšs - \"Restart\" WinPanel iekšā")]
     public RectTransform winRestartButton;
+    [Tooltip("Ja tukšs - \"MenuButton\" WinPanel iekšā")]
     public RectTransform winMenuButton;
 
     [Header("Skaņas")]
@@ -112,6 +116,8 @@ public class HanoiGameManager : MonoBehaviour
         uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
         FindBlocks();
+        FindUi();
+        PanelOnTop.Apply(winPanel);
 
         if (Touchscreen.current != null)
             lastTouchId = Touchscreen.current.primaryTouch.touchId.ReadValue();
@@ -158,6 +164,71 @@ public class HanoiGameManager : MonoBehaviour
 
         if (blocks.Count == 0)
             Debug.LogError("HanoiGameManager: nav atrasts neviens bloks!");
+    }
+
+    // Tukšos laukus aizpildām pēc objektu nosaukumiem (kā CityScene)
+    void FindUi()
+    {
+        Transform[] all = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        if (winPanel == null)
+        {
+            Transform t = FindByName(all, "WinPanel", null);
+            if (t != null) winPanel = t.gameObject;
+        }
+        Transform win = winPanel != null ? winPanel.transform : null;
+
+        if (finalTimeText == null)
+        {
+            Transform t = FindByName(all, "FinalTimeText", win);
+            if (t != null) finalTimeText = t.GetComponent<TMP_Text>();
+        }
+
+        if (stars == null || stars.Length != 3) stars = new GameObject[3];
+        for (int i = 0; i < 3; i++)
+        {
+            if (stars[i] != null) continue;
+            Transform t = FindByName(all, "star" + (i + 1), win);
+            if (t != null) stars[i] = t.gameObject;
+        }
+
+        if (winRestartButton == null) winRestartButton = FindByName(all, "Restart", win) as RectTransform;
+        if (winMenuButton == null) winMenuButton = FindByName(all, "MenuButton", win, true) as RectTransform;
+
+        if (timerText == null)
+        {
+            Transform t = FindByName(all, "Timer", null);
+            if (t != null) timerText = t.GetComponent<TMP_Text>();
+        }
+
+        if (menuButton == null)
+        {
+            foreach (Transform t in all)
+            {
+                if (!t.name.Trim().StartsWith("MenuButton")) continue;
+                if (win != null && t.IsChildOf(win)) continue;
+                menuButton = t as RectTransform;
+                break;
+            }
+        }
+    }
+
+    // Meklē objektu pēc nosaukuma; ja "parent" norādīts - tikai tā iekšā, citādi - ārpus WinPanel
+    Transform FindByName(Transform[] all, string objName, Transform parent, bool startsWith = false)
+    {
+        Transform win = winPanel != null ? winPanel.transform : null;
+
+        foreach (Transform t in all)
+        {
+            string n = t.name.Trim();
+            bool match = startsWith ? n.StartsWith(objName) : n == objName;
+            if (!match) continue;
+
+            if (parent != null && !t.IsChildOf(parent)) continue;
+            if (parent == null && win != null && t != win && t.IsChildOf(win)) continue;
+            return t;
+        }
+        return null;
     }
 
     // ===================== Stieņu ģeometrija =====================
@@ -215,19 +286,14 @@ public class HanoiGameManager : MonoBehaviour
         if (winPanel != null) winPanel.SetActive(false);
         if (musicSource != null && musicSource.clip != null && !musicSource.isPlaying) musicSource.Play();
 
-        int count = blocksInGame <= 0 ? blocks.Count : Mathf.Clamp(blocksInGame, 1, blocks.Count);
-
         foreach (List<HanoiBlock> p in pegs) p.Clear();
         activeBlocks.Clear();
 
-        // Lielākais apakšā
+        // Visi bloki uz kreisā stieņa, lielākais apakšā
         for (int i = blocks.Count - 1; i >= 0; i--)
         {
             HanoiBlock b = blocks[i];
-            bool used = i < count;
-            b.gameObject.SetActive(used);
-            if (!used) continue;
-
+            b.gameObject.SetActive(true);
             b.SetLifted(false);
             b.peg = 0;
             pegs[0].Add(b);
@@ -236,17 +302,6 @@ public class HanoiGameManager : MonoBehaviour
         }
 
         UpdateHud();
-    }
-
-    public void ChangeBlockCount(int delta)
-    {
-        int current = blocksInGame <= 0 ? blocks.Count : blocksInGame;
-        int next = Mathf.Clamp(current + delta, 3, blocks.Count);
-        PlaySound(clickSound);
-        if (next == current) return;
-
-        blocksInGame = next;
-        NewGame();
     }
 
     public void GoToMenu()
@@ -332,20 +387,20 @@ public class HanoiGameManager : MonoBehaviour
 
     void CheckWin()
     {
-        if (pegs[2].Count != activeBlocks.Count) return;
+        // Uzvara, ja viss tornis pārvietots uz vidējo VAI labējo stieni
+        if (pegs[1].Count != activeBlocks.Count && pegs[2].Count != activeBlocks.Count) return;
 
         won = true;
         timerRunning = false;
 
-        int optimal = (1 << activeBlocks.Count) - 1;
-        int stars = moves == optimal ? 3 : (moves <= optimal * 1.5f ? 2 : 1);
+        // Zvaigznes pēc laika (kā mašīnu spēlē)
+        int starCount = elapsed <= threeStarTime ? 3 : (elapsed <= twoStarTime ? 2 : 1);
 
-        if (winImage != null && victorySprites != null && victorySprites.Length >= stars &&
-            victorySprites[stars - 1] != null)
-            winImage.sprite = victorySprites[stars - 1];
+        for (int i = 0; i < stars.Length; i++)
+            if (stars[i] != null) stars[i].SetActive(i < starCount);
 
-        if (winTimeText != null) winTimeText.text = GameManagerScript.FormatTime(elapsed);
-        if (winMovesText != null) winMovesText.text = "Gājieni: " + moves + " (min. " + optimal + ")";
+        if (finalTimeText != null) finalTimeText.text = GameManagerScript.FormatTime(elapsed);
+        if (winMovesText != null) winMovesText.text = "Gājieni: " + moves;
 
         if (musicSource != null) musicSource.Stop();
         PlaySound(victorySound);
@@ -359,10 +414,8 @@ public class HanoiGameManager : MonoBehaviour
 
     void UpdateHud()
     {
-        int optimal = (1 << activeBlocks.Count) - 1;
-        if (movesText != null) movesText.text = "Gājieni: " + moves + " / " + optimal;
+        if (movesText != null) movesText.text = "Gājieni: " + moves;
         if (timerText != null) timerText.text = GameManagerScript.FormatTime(elapsed);
-        if (blockCountText != null) blockCountText.text = "Bloki: " + activeBlocks.Count;
     }
 
     void PlaySound(AudioClip clip)
@@ -549,8 +602,6 @@ public class HanoiGameManager : MonoBehaviour
 
         if (Hit(menuButton, screenPos)) { GoToMenu(); return true; }
         if (Hit(restartButton, screenPos)) { PlaySound(clickSound); NewGame(); return true; }
-        if (Hit(fewerBlocksButton, screenPos)) { ChangeBlockCount(-1); return true; }
-        if (Hit(moreBlocksButton, screenPos)) { ChangeBlockCount(1); return true; }
         return false;
     }
 

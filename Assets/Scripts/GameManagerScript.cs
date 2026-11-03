@@ -50,6 +50,10 @@ public class GameManagerScript : MonoBehaviour
         elapsedTime = 0f;
         gameActive = true;
 
+        // Paneļi vienmēr virs mašīnām un lidojošajiem objektiem
+        PanelOnTop.Apply(winPanel);
+        PanelOnTop.Apply(losePanel);
+
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
 
@@ -57,6 +61,13 @@ public class GameManagerScript : MonoBehaviour
         UpdateTimerText();
         SetHeartsVisible(true);
         UpdateHearts();
+    }
+
+    // Atstājot mašīnu ainu, karogs tiek notīrīts, lai tas netraucētu citām ainām
+    // (piem., Hanojas tornī apbalvojošā reklāma pārbauda GameOver)
+    void OnDestroy()
+    {
+        GameOver = false;
     }
 
     void Update()
@@ -118,7 +129,11 @@ public class GameManagerScript : MonoBehaviour
         FreezeGame();
         SetHeartsVisible(false);
 
-        if (winPanel != null) winPanel.SetActive(true);
+        if (winPanel != null)
+        {
+            winPanel.SetActive(true);
+            winPanel.transform.SetAsLastSibling();
+        }
         if (finalTimeText != null) finalTimeText.text = FormatTime(elapsedTime);
 
         SetStars(CalculateStars(elapsedTime));
@@ -130,7 +145,11 @@ public class GameManagerScript : MonoBehaviour
         FreezeGame();
         SetHeartsVisible(false);
 
-        if (losePanel != null) losePanel.SetActive(true);
+        if (losePanel != null)
+        {
+            losePanel.SetActive(true);
+            losePanel.transform.SetAsLastSibling();
+        }
     }
 
     // Pilnībā iesaldē spēli: fiziku, animācijas, daļiņas un vilkšanu
