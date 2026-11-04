@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FlyingObjectSpawnScript : MonoBehaviour
 {
@@ -28,11 +28,31 @@ public class FlyingObjectSpawnScript : MonoBehaviour
 
     void Start()
     {
+        KeepFlyingObjectsAboveCars();
+
         screenBoundariesScript = Object.FindFirstObjectByType<ScreenBoundariesScript>();
         minY = screenBoundariesScript.worldBounds.yMin;
         maxY = screenBoundariesScript.worldBounds.yMax;
         InvokeRepeating(nameof(SpawnCloud), 0f, cloudSpawnInterval);
         InvokeRepeating(nameof(SpawnPlain), 0f, plainSpawnInterval);
+    }
+
+    // Mākoņi, lidmašīnas un bumbas ir SpawnPoint bērni. Piešķiram SpawnPoint savu Canvas ar
+    // augstāku kārtas numuru - tad tie vienmēr zīmējas virs mašīnām (arī velkot mašīnu),
+    // bet zem uzvaras/zaudējuma paneļiem (PanelOnTop = 100).
+    void KeepFlyingObjectsAboveCars()
+    {
+        if (spawnPoint == null) return;
+
+        Canvas parentCanvas = spawnPoint.parent != null
+            ? spawnPoint.parent.GetComponentInParent<Canvas>()
+            : null;
+
+        Canvas c = spawnPoint.GetComponent<Canvas>();
+        if (c == null) c = spawnPoint.gameObject.AddComponent<Canvas>();
+        c.overrideSorting = true;
+        c.sortingOrder = 50;
+        if (parentCanvas != null) c.sortingLayerID = parentCanvas.sortingLayerID;
     }
 
     void SpawnCloud()
